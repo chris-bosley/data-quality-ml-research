@@ -2,20 +2,18 @@ import numpy as np
 import pandas as pd
 
 """
-Defines a Mutator class with methods for data manipulation tasks on DataFrames.
+Defines a Mutator class with methods for data manipulation tasks.
 
-This class adheres to a mutation pattern, modifying the original DataFrame
-in-place.
+This class adheres to a mutation pattern, modifying the original DataFrame in-place.
 
 **Methods:**
 
-1. `change_to_zero(self, df, columns, percentage=0.0, seed=None, seed_modifier=53)`: Changes a specified
-   percentage of numerical values in each column of a DataFrame to 0,
-   randomizing the DataFrame order before modifying each column.
+1. `change_to_zero(self, df, columns, percentage=0.0, seed=None, seed_modifier=53)`: Randomly changes a specified
+   percentage of numerical values in each column of a DataFrame to 0
 
 **Usage:**
 
-# Example 1: Change 10% of values in columns 'col1' and 'col2' to 0 (seed for reproducibility)
+# Example 1: Change 10% of values in columns 'col1' and 'col2' to 0
 data = pd.DataFrame({'col1': [1, 2, 3, 4], 'col2': [5, 6, 7, 8]})
 mutator = Mutator()
 mutator.change_to_zero(data, columns=['col1', 'col2'], percentage=0.1, seed=42)
@@ -30,16 +28,13 @@ class Mutator:
 
     def change_to_zero(self, df, columns, percentage=0.0, seed=None, seed_modifier=53):
         """
-        Changes a specified percentage of numerical values in each column of a DataFrame to 0,
-        randomizing the DataFrame order before modifying each column.
+        Randomly changes a specified percentage of numerical values in each column of a DataFrame to 0.
 
         Args:
-            df (pandas.DataFrame): The DataFrame to modify (modified in-place).
-            columns (list): A list of column names to modify.
-            percentage (float, optional): The percentage of values to change to 0 in each column
-                (between 0 and 1). Defaults to 0.0.
-            seed (int, optional): The random seed for shuffling the DataFrame. Defaults to None
-                (non-deterministic).
+            df (pandas.DataFrame): The DataFrame to mutate.
+            columns (list): A list of column names to mutate.
+            percentage (float, optional): The percentage of values to change to 0 in each column. Defaults to 0.0.
+            seed (int, optional): The random seed for randomizing the DataFrame. Defaults to None (non-deterministic).
             seed_modifier (int, optional): The value used to salt the inner seed for each column. Defaults to 53.
 
         Raises:
@@ -82,4 +77,4 @@ class Mutator:
                     if num_values_to_change == 0:
                         break  # Early termination if we're done with changes
 
-        return df  # Return the modified DataFrame
+        return df  # Return the mutated DataFrame
