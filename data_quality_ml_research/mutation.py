@@ -1,10 +1,10 @@
 import numpy as np
 import pandas as pd
 
+# Note: This shuffles the DataFrame upon return. Perhaps not ideal, but I don't think it matters
+
 """
 Defines a Mutator class with methods for data manipulation tasks.
-
-This class adheres to a mutation pattern, modifying the original DataFrame in-place.
 
 **Methods:**
 
@@ -16,8 +16,8 @@ This class adheres to a mutation pattern, modifying the original DataFrame in-pl
 # Example 1: Change 10% of values in columns 'col1' and 'col2' to 0
 data = pd.DataFrame({'col1': [1, 2, 3, 4], 'col2': [5, 6, 7, 8]})
 mutator = Mutator()
-mutator.change_to_zero(data, columns=['col1', 'col2'], percentage=0.1, seed=42)
-print(data)
+mutatedData = mutator.change_to_zero(data, columns=['col1', 'col2'], percentage=0.1, seed=42)
+print(mutatedData)
 """
 
 
@@ -60,7 +60,7 @@ class Mutator:
         # Iterate through columns
         for col in columns:
             # Create an inner seed to improve randomization in subsequent columns
-            inner_seed = seed * seed_modifier + hash(col)
+            inner_seed = seed * seed_modifier + (hash(col) % 100000)
             np.random.seed(inner_seed)
 
             # Randomize the row order for this column
@@ -72,9 +72,9 @@ class Mutator:
             # Modify values in the current column until the target number of changes is reached
             for j in range(len(df_shuffled)):
                 if pd.api.types.is_numeric_dtype(df_shuffled.loc[j, col]):
-                    df.loc[j, col] = 0
+                    df_shuffled.loc[j, col] = 0
                     num_values_to_change -= 1
                     if num_values_to_change == 0:
                         break  # Early termination if we're done with changes
 
-        return df  # Return the mutated DataFrame
+        return df_shuffled  # Return the mutated DataFrame
