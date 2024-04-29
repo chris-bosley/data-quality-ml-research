@@ -68,7 +68,9 @@ def random_nonintersecting_subsets(df, proportions, seed=None):
         for size in subset_sizes:
             if size > 0:
                 subset = df_copy.iloc[start_idx : start_idx + size]
-                these_subsets.append(subset)
+                these_subsets.append(
+                    subset.reset_index()
+                )  # Reset index for compatibility
                 start_idx += size
     else:
         raise ValueError(
