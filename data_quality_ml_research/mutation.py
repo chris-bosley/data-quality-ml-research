@@ -8,15 +8,22 @@ Defines a Mutator class with methods for data manipulation tasks.
 
 **Methods:**
 
-1. `change_to_zero(self, df, columns, percentage=0.0, seed=None, seed_modifier=53)`: Randomly changes a specified
-   percentage of numerical values in each column of a DataFrame to 0
+1. `return_original(self, df)`: Returns data without mutations applied
+2. `change_to_zero(self, df, columns, percentage=0.0, seed=None, seed_modifier=53)`: Randomly changes a specified
+   percentage of numerical values in each specified column of a DataFrame to 0
 
 **Usage:**
 
-# Example 1: Change 10% of values in columns 'col1' and 'col2' to 0
+#Example 1: Return original data
 data = pd.DataFrame({'col1': [1, 2, 3, 4], 'col2': [5, 6, 7, 8]})
 mutator = Mutator()
-mutatedData = mutator.change_to_zero(data, columns=['col1', 'col2'], percentage=0.1, seed=42)
+mutatedData = mutator.return_original(data)
+print(mutatedData)
+
+# Example 2: Change 30% of values in columns 'col1' and 'col2' to 0
+data = pd.DataFrame({'col1': [1, 2, 3, 4], 'col2': [5, 6, 7, 8]})
+mutator = Mutator()
+mutatedData = mutator.change_to_zero(data, columns=['col1', 'col2'], percentage=0.3, seed=42)
 print(mutatedData)
 """
 
@@ -26,7 +33,16 @@ class Mutator:
     A class for data manipulation tasks on DataFrames.
     """
 
-    def change_to_zero(self, df, columns, percentage=0.0, seed=None, seed_modifier=53):
+    def return_original(self, df):
+        """
+        Returns the original data. This is the identity mutation.
+
+        Args:
+            df (pandas.DataFrame): The DataFrame to mutate.
+        """
+        return df
+
+    def change_to_zero(self, df, columns, percentage=0.0, seed=789, seed_modifier=53):
         """
         Randomly changes a specified percentage of numerical values in each column of a DataFrame to 0.
 
