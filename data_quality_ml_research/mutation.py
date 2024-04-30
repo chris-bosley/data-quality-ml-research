@@ -6,7 +6,7 @@ import pandas as pd
 # Note: This shuffles the DataFrame upon return. Perhaps not ideal, but I don't think it matters
 
 """
-Defines a Mutator class with methods for data manipulation tasks.
+Defines a Mutator class with methods for data mutation tasks.
 
 **Methods:**
 
