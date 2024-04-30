@@ -94,3 +94,25 @@ class Mutator:
                         break  # Early termination if we're done with changes
 
         return df_shuffled  # Return the mutated DataFrame
+
+    def transpose_columns(self, df, col1, col2):
+        """Transposes two columns in the dataset to simulate a key transposition.
+
+        Args:
+            df (pandas.DataFrame): The DataFrame to mutate.
+            col1: First column to transpose.
+            col2: Second column to transpose.
+
+        Raises:
+            TypeError: If either column does not exist in the DataFrame.
+        """
+
+        # Check that both columns exist
+        for col in [col1, col2]:
+            if col not in df.columns:
+                raise TypeError(f"Column {col} must exist in DataFrame.")
+
+        # Transpose columns
+        df_transposed = df.rename({col1: col2, col2: col1})
+
+        return df_transposed
