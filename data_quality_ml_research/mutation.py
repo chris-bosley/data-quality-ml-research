@@ -16,6 +16,8 @@ Defines a Mutator class with methods for data manipulation tasks.
 3. `transpose_columns(self, df, col1, col2)`: Transposes two columns of a dataframe.
 4. `add_categorical_class(self, df, column_name, percentage=0.0, seed=None)`: Randomly changes entries in a
     specified categorical column to a new, unseen category.
+5. `remove_class(self, df, column_name, class_seed=None, mutator_seed=None)`: Randomly selects a class from a
+    categorical column and removes it, replacing all members with existing classes.
 
 **Usage:**
 
@@ -41,6 +43,12 @@ print(mutatedData)
 data = pd.DataFrame({'col1': [1, 2, 3, 4], 'col2': [5, 6, 7, 8]})
 mutator = Mutator()
 mutatedData = mutator.add_categorical_class(data, 'col2'', percentage=0.5, seed=314)
+print(mutatedData)
+
+# Example 5: Randomly lose a class and replace all members with other classes
+data = pd.DataFrame({'col1': [1, 2, 3, 4], 'col2': [5, 6, 7, 8]})
+mutator = Mutator()
+mutatedData = mutator.remove_class(data, `col2``, class_seed=314, mutator_seed=1718)
 print(mutatedData)
 """
 
@@ -184,5 +192,57 @@ class Mutator:
             indices_to_change = random.sample(range(num_rows), num_to_change)
             for i in indices_to_change:
                 df.loc[i, column_name] = new_class_label
+
+        return df
+
+    def remove_class(self, df, column_name, class_seed=None, mutator_seed=None):
+        """
+        Modifies a specified column in a DataFrame, randomly selecting a class to remove and redistributing
+            members to other classes in a seeded fashion.
+
+        Args:
+            df (pandas.DataFrame): The DataFrame to modify.
+            column_name (str): The name of the column to modify.
+            class_seed (int, optional): The random seed for selecting the class to remove. Defaults to None.
+            mutator_seed (int, optional): The random seed for redistributing members. Defaults to None.
+
+        Raises:
+            ValueError: If the column does not exist in the DataFrame,
+                        or if there are less than two unique classes in the column.
+        """
+
+        # Check if the column exists
+        if column_name not in df.columns:
+            raise ValueError(f"Column '{column_name}' does not exist in the DataFrame.")
+
+        # Check if there are at least two unique classes
+        if len(df[column_name].unique()) < 2:
+            raise ValueError("There must be at least two unique classes in the column.")
+
+        # Set random seeds (if provided)
+        if class_seed is not None:
+            random.seed(class_seed)
+
+        # Get all classes
+        all_classes = df[column_name].unique()
+
+        # Randomly select a class to remove using the selection seed
+        class_to_remove = random.choice(all_classes)
+
+        # Get all classes (excluding the one to remove)
+        remaining_classes = all_classes[all_classes != class_to_remove]
+
+        # Get indices of entries with the class to remove
+        indices_to_change = df[df[column_name] == class_to_remove].index
+
+        # Set seed for member redistribution (if provided)
+        if mutator_seed is not None:
+            random.seed(mutator_seed)
+
+        # Randomly select a new class for each entry (excluding the original class)
+        new_classes = random.choices(remaining_classes, k=len(indices_to_change))
+
+        # Update the DataFrame with the new classes
+        df.loc[indices_to_change, column_name] = new_classes
 
         return df
