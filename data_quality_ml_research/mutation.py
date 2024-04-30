@@ -1,3 +1,5 @@
+import random
+
 import numpy as np
 import pandas as pd
 
@@ -11,10 +13,13 @@ Defines a Mutator class with methods for data manipulation tasks.
 1. `return_original(self, df)`: Returns data without mutations applied
 2. `change_to_zero(self, df, columns, percentage=0.0, seed=None, seed_modifier=53)`: Randomly changes a specified
    percentage of numerical values in each specified column of a DataFrame to 0
+3. `transpose_columns(self, df, col1, col2)`: Transposes two columns of a dataframe.
+4. `add_categorical_class(self, df, column_name, percentage=0.0, seed=None)`: Randomly changes entries in a
+    specified categorical column to a new, unseen category.
 
 **Usage:**
 
-#Example 1: Return original data
+# Example 1: Return original data
 data = pd.DataFrame({'col1': [1, 2, 3, 4], 'col2': [5, 6, 7, 8]})
 mutator = Mutator()
 mutatedData = mutator.return_original(data)
@@ -25,9 +30,22 @@ data = pd.DataFrame({'col1': [1, 2, 3, 4], 'col2': [5, 6, 7, 8]})
 mutator = Mutator()
 mutatedData = mutator.change_to_zero(data, columns=['col1', 'col2'], percentage=0.3, seed=42)
 print(mutatedData)
+
+# Example 3: Transpose two data columns
+data = pd.DataFrame({'col1': [1, 2, 3, 4], 'col2': [5, 6, 7, 8]})
+mutator = Mutator()
+mutatedData = mutator.transpose_columns(data, 'col1', 'col2')
+print(mutatedData)
+
+# Example 4: Introduce a new categorical class and randomly assign 50% of entries to the new class
+data = pd.DataFrame({'col1': [1, 2, 3, 4], 'col2': [5, 6, 7, 8]})
+mutator = Mutator()
+mutatedData = mutator.add_categorical_class(data, 'col2'', percentage=0.5, seed=314)
+print(mutatedData)
 """
 
 
+# noinspection PyUnboundLocalVariable,PyMethodMayBeStatic
 class Mutator:
     """
     A class for data manipulation tasks on DataFrames.
@@ -116,3 +134,55 @@ class Mutator:
         df_transposed = df.rename({col1: col2, col2: col1})
 
         return df_transposed
+
+    def add_categorical_class(self, df, column_name, percentage=0.0, seed=None):
+        """
+        Modifies a categorical column in a DataFrame, inferring a new class and randomly changing entries.
+
+        Args:
+            df (pandas.DataFrame): The DataFrame to modify.
+            column_name (str): The name of the column to modify.
+            percentage (float, optional): The percentage of entries to change to the new
+                class (between 0 and 1). Defaults to 0.0.
+            seed (int, optional): The random seed for repeatability. Defaults to None.
+
+        Raises:
+            ValueError: If the column does not exist in the DataFrame,
+                        or if the percentage is not between 0 and 1.
+        """
+
+        # Check if the column exists
+        if column_name not in df.columns:
+            raise ValueError(f"Column '{column_name}' does not exist in the DataFrame.")
+
+        # Check if the column is numeric
+        if not pd.api.types.is_numeric_dtype(df[column_name]):
+            raise ValueError(f"Column '{column_name}' is not numeric.")
+
+        # Check if the column is of integer type
+        if not pd.api.types.is_integer_dtype(df[column_name]):
+            raise ValueError(f"Column '{column_name}' is not of integer type.")
+
+        # Set random seed (if provided)
+        if seed is not None:
+            random.seed(seed)
+
+        # Get existing distinct values
+        existing_values = df[column_name].unique()
+
+        # Infer a new class label (assuming integer increment)
+        new_class_label = max(existing_values) + 1
+
+        # Randomly modify entries to the new class (if applicable)
+        if percentage > 0:
+            if percentage < 0 or percentage > 1:
+                raise ValueError("Percentage must be between 0 and 1.")
+            num_rows = len(df)
+            num_to_change = int(percentage * num_rows)
+
+            # Sample indices without replacement using random.sample
+            indices_to_change = random.sample(range(num_rows), num_to_change)
+            for i in indices_to_change:
+                df.loc[i, column_name] = new_class_label
+
+        return df
