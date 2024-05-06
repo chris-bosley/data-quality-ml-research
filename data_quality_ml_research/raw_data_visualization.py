@@ -5,7 +5,7 @@ import helpers as dq
 
 def main():
     shopper_data = dq.read_csv_to_dataframe("../data/online_shoppers_intention.csv")
-    bank_data = dq.read_csv_to_dataframe("../data/bank-additional-full.csv")
+    bank_data = dq.read_csv_to_dataframe("../data/bank-additional-full.csv", separator=';')
 
     # Create rows and columns of the subplots to create a square
     # With more rows than columns if necessary

@@ -5,9 +5,7 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 
 from mutation import Mutator
 
-
-# noinspection PyArgumentList
-def read_csv_to_dataframe(filepath, inplace=False):
+def read_csv_to_dataframe(filepath, separator=',', inplace=False):
     """
     Reads a CSV file from a relative path within the project and returns a pandas DataFrame.
 
@@ -26,9 +24,9 @@ def read_csv_to_dataframe(filepath, inplace=False):
 
     # Read the CSV file using the relative path
     if inplace:
-        pd.read_csv(filepath, inplace=True)
+        pd.read_csv(filepath, sep=separator, inplace=True)
     else:
-        df = pd.read_csv(filepath)
+        df = pd.read_csv(filepath, sep=separator)
         return df
 
 
