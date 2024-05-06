@@ -1,8 +1,12 @@
 # This name needs changed
 import pandas as pd
 import numpy as np
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+
+from data_quality_ml_research import mutation
 
 
+# noinspection PyArgumentList
 def read_csv_to_dataframe(filepath, inplace=False):
     """
     Reads a CSV file from a relative path within the project and returns a pandas DataFrame.
@@ -103,3 +107,35 @@ def get_random_subsets_from_csv(filepath, proportions, seed=None):
     subsets = random_nonintersecting_subsets(df, proportions, seed)
 
     return subsets
+
+
+def get_mutation_metrics(datasets, target_col, feature_cols, clf):
+    classification_metrics = {
+        "precision": precision_score,
+        "recall": recall_score,
+        "accuracy": accuracy_score,
+        "f1": f1_score,
+    }
+
+    mutation_results = {}
+    for metricName, metFunc in classification_metrics.items():
+        this_metric = []
+        for i in datasets:
+            this_metric.append(metFunc(i[target_col], clf.predict(i[feature_cols])))
+        mutation_results[metricName] = this_metric
+    return mutation_results
+
+
+def get_mutations(data, severity, config):
+    mutator = mutation.Mutator()
+    mutated_data = []
+    for i in data:
+        mutated = mutator.change_to_zero(
+            i,
+            columns=["PageValues"],
+            percentage=severity,
+            seed=config["seeds"]["outer_seed"],
+            seed_modifier=config["seeds"]["inner_seed"],
+        )
+        mutated_data.append(mutated)
+    return mutated_data
