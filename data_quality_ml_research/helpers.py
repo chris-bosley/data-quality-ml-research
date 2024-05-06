@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 
-from data_quality_ml_research import mutation
+from mutation import Mutator
 
 
 # noinspection PyArgumentList
@@ -127,7 +127,7 @@ def get_mutation_metrics(datasets, target_col, feature_cols, clf):
 
 
 def get_mutations(data, severity, config):
-    mutator = mutation.Mutator()
+    mutator = Mutator()
     mutated_data = []
     for i in data:
         mutated = mutator.change_to_zero(
