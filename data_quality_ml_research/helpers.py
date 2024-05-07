@@ -1,17 +1,19 @@
-# This name needs changed
+# This filename needs changed
 import pandas as pd
 import numpy as np
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 
 from mutation import Mutator
 
-def read_csv_to_dataframe(filepath, separator=',', inplace=False):
+
+def read_data(filepath, separator=",", inplace=False):
     """
     Reads a CSV file from a relative path within the project and returns a pandas DataFrame.
 
     Args:
         filepath (str): The relative path to the CSV file within the project.
-      inplace (bool, optional): If True, modifies the existing DataFrame object passed to the function
+        separator (str): String to use as field delimiter for file ingest.
+        inplace (bool, optional): If True, modifies the existing DataFrame object passed to the function
                                  instead of creating a new one. This can be useful for memory efficiency
                                  when working with very large CSV files, but it can also lead to unexpected
                                  behavior if the DataFrame is used elsewhere in your code. Defaults to False.
@@ -33,6 +35,7 @@ def read_csv_to_dataframe(filepath, separator=',', inplace=False):
 def random_nonintersecting_subsets(df, proportions, seed=None):
     """
     Generates non-intersecting random subsets from a pandas DataFrame based on specified proportions.
+    Sets are shuffled before extraction to ensure randomness.
 
     Args:
         df (pandas.DataFrame): The DataFrame to split into subsets.
@@ -76,13 +79,15 @@ def random_nonintersecting_subsets(df, proportions, seed=None):
                 start_idx += size
     else:
         raise ValueError(
-            "Total subset size exceeds the number of rows in the DataFrame."
+            "Total subset size exceeds the total number of rows in the DataFrame."
         )
 
     return these_subsets
 
 
-def get_random_subsets_from_csv(filepath, proportions, seed=None):
+def get_random_subsets_from_file(
+    filepath, proportions, seed=None, separator=",", inplace=False
+):
     """
     Reads a CSV file, generates non-intersecting random subsets based on proportions, and returns them.
 
@@ -90,6 +95,12 @@ def get_random_subsets_from_csv(filepath, proportions, seed=None):
         filepath (str): The relative path to the CSV file within the project.
         proportions (list): A list of floats representing the proportion of rows for each subset.
         seed (int, optional): An optional seed for the random number generator. Defaults to None.
+        separator (str): String to use as field delimiter for file ingest.
+        inplace (bool, optional): If True, modifies the existing DataFrame object passed to the function
+                                 instead of creating a new one. This can be useful for memory efficiency
+                                 when working with very large CSV files, but it can also lead to unexpected
+                                 behavior if the DataFrame is used elsewhere in your code. Defaults to False.
+                                 (creates a new DataFrame).
 
     Returns:
         list: A list of non-intersecting DataFrames representing the random subsets.
@@ -98,8 +109,8 @@ def get_random_subsets_from_csv(filepath, proportions, seed=None):
           ValueError: If the total size of the subsets exceeds the number of rows in the DataFrame.
     """
 
-    # Read the DataFrame from the CSV file (using inplace=False)
-    df = read_csv_to_dataframe(filepath, inplace=False)
+    # Read the DataFrame from the file
+    df = read_data(filepath, separator=separator, inplace=inplace)
 
     # Generate random subsets based on proportions
     subsets = random_nonintersecting_subsets(df, proportions, seed)
@@ -108,6 +119,24 @@ def get_random_subsets_from_csv(filepath, proportions, seed=None):
 
 
 def get_mutation_metrics(datasets, target_col, feature_cols, clf):
+    """
+    Calculates a set of classification metrics for each dataset in a list.
+
+    This function ingests a list of DataFrames, the target column name,
+    the feature column names, and a trained classifier, and calculates a set of classification
+    metrics (precision, recall, accuracy, F1-score) for each dataset in the list.
+
+    Args:
+        datasets (list): A list of pandas DataFrames.
+        target_col (str): The name of the column containing the target variable in the DataFrames.
+        feature_cols (list): A list of strings representing the names of the feature columns in the DataFrames.
+        clf (sklearn.classifier): A trained sklearn classifier object.
+
+    Returns:
+        dict: A dictionary where keys are classification metric names (strings) and values are lists containing
+              the corresponding metric scores for each dataset in the `datasets` list.
+    """
+    # Declare metrics to be calculated
     classification_metrics = {
         "precision": precision_score,
         "recall": recall_score,
@@ -116,20 +145,44 @@ def get_mutation_metrics(datasets, target_col, feature_cols, clf):
     }
 
     mutation_results = {}
+    # Iterate through required metrics
     for metricName, metFunc in classification_metrics.items():
         this_metric = []
         for i in datasets:
+            # Calculate metric for each dataset
             this_metric.append(metFunc(i[target_col], clf.predict(i[feature_cols])))
         mutation_results[metricName] = this_metric
     return mutation_results
 
 
 def get_mutations(data, severity, config):
+    """
+    Applies a data mutation to each DataFrame in a list with a specified severity level.
+
+    This function takes a list of DataFrames (`data`), a mutation severity level (`severity`),
+    and a configuration dictionary (`config`) containing random number generator seeds and other collateral.
+    It iterates through each DataFrame in `data`, applies the mutation  with the specified severity to the
+    named columns, and appends the mutated DataFrame to a new list.
+
+    Args:
+        data (list): A list of pandas DataFrames.
+        severity (float): A value between 0 and 1 representing the proportion of elements in the
+                          specified columns to be mutated.
+        config (dict): A dictionary containing configuration parameters, including seeds for the random
+                       number generator. The dictionary should have keys "seeds" and "outer_seed" and
+                       "inner_seed" nested within "seeds". This is going to be needed for other stuff too.
+
+    Returns:
+        list: A list of pandas DataFrames containing the mutated versions of the input DataFrames.
+    """
+    # Declare mutator
     mutator = Mutator()
     mutated_data = []
     for i in data:
+        # induce mutation on each dataset
         mutated = mutator.change_to_zero(
             i,
+            # NEED TO CONFIG COLUMN IN FUNCTION LOL
             columns=["PageValues"],
             percentage=severity,
             seed=config["seeds"]["outer_seed"],
@@ -137,3 +190,44 @@ def get_mutations(data, severity, config):
         )
         mutated_data.append(mutated)
     return mutated_data
+
+
+def collect_mutation_results(data_to_mutate, config, target_col, feature_cols, clf):
+    """
+    Evaluates a classifier's performance under a series of data mutations.
+
+    This function iterates through a range of data mutation severities (from 0 to 1 in steps of 0.1 should be config).
+    For each severity level, it performs the following steps:
+        1. Applies the mutation (defined in `Mutator`) to the input data with the specified severity.
+        2. Calculates a set of classification metrics (precision, recall, accuracy, F1-score) on the mutated data.
+        3. Creates a dictionary containing information about the mutation, severity level,
+           and the calculated metrics.
+        4. Appends this dictionary to a list that stores results for all severities.
+
+    Args:
+        data_to_mutate (list): A list of pandas DataFrames.
+        config (dict): A dictionary containing configuration parameters.
+        target_col (str): The name of the column containing the target variable in the DataFrames.
+        feature_cols (list): A list of strings representing the names of the feature columns in the DataFrames.
+        clf (sklearn.classifier): A trained sklearn classifier object.
+
+    Returns:
+        list: A list of dictionaries containing information about each mutation run, including mutation type,
+              severity, and a dictionary of classification metrics for the mutated data.
+    """
+    all_runs = []
+    for mutation_severity in np.arange(0, 1.01, 0.1):
+        # Round here because np float stuff
+        mutation_severity = round(mutation_severity, 2)
+        # Mutate the data
+        mutated_data = get_mutations(data_to_mutate, mutation_severity, config)
+        # Calculate results at current severity
+        run_results = {
+            "mutation": "change_to_zero",
+            "severity": mutation_severity,
+            "metrics": get_mutation_metrics(
+                mutated_data, target_col, feature_cols, clf
+            ),
+        }
+        all_runs.append(run_results)
+    return all_runs
