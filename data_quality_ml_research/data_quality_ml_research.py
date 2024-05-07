@@ -16,6 +16,7 @@ project > python data_quality_ml_research
 """
 
 import pandas as pd
+import os
 from sklearn.linear_model import LogisticRegressionCV
 
 import helpers as dq
@@ -35,13 +36,23 @@ def main():
     config = {
         "model": "Logistic Regression",
         "data_location": "../data/online_shoppers_intention.csv",
-        "result_output_location": "../output_data/output.csv",
+        "output_path": "../output_data",  # Path to store output files
+        "output_filename": "output.csv",  # Filename for the results
         "preprocess_data": False,
         "training_percent": 0.5,
         "mutator": "change_to_zero",
         "num_scoring_groups": 5,
         "seeds": {"outer_seed": 123, "inner_seed": 456},
     }
+
+    # Handle potential output file conflicts
+    output_path = config["output_path"]
+    output_filename = config["output_filename"]
+    output_file = os.path.join(output_path, output_filename)
+    if os.path.exists(output_file):
+        print(f"Warning: Output file already exists: {output_file}")
+        print(f"Deleting file...")
+        os.remove(output_file)
 
     # Declare required classifier
     # Look at default parameters OR quick grid search
