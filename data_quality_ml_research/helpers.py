@@ -1,4 +1,6 @@
 # This filename needs changed
+import json
+
 import pandas as pd
 import numpy as np
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
@@ -233,3 +235,28 @@ def collect_mutation_results(data_to_mutate, config, target_col, feature_cols, c
         }
         all_runs.append(run_results)
     return all_runs
+
+
+def load_config(configuration_file):
+    """Loads configuration data from a JSON file.
+
+    Args:
+        configuration_file (str): The path to the configuration JSON file.
+
+    Returns:
+        dict: The configuration dictionary parsed from the JSON file.
+
+    Raises:
+        FileNotFoundError: If the specified JSON file cannot be found.
+        json.JSONDecodeError: If there's an error parsing the JSON data.
+
+    """
+    try:
+        with open(configuration_file, "r") as config_file:
+            config = json.loads(config_file.read())
+            return config
+    except FileNotFoundError:
+        raise FileNotFoundError(f"Error: File Not Found")
+    except json.JSONDecodeError as e:
+        # raise json.JSONDecodeError(f"JSON Parsing Error: {e}", e.doc, e.pos)
+        print(f"JSON Parsing Error: {e} at {e.pos} in {e.doc}")

@@ -1,0 +1,1 @@
+{"model": "Logistic Regression", "data_location": "../data/online_shoppers_intention.csv", "preprocess_data": false, "training_percent": 0.5, "mutator": "change_to_zero", "num_scoring_groups": 5, "seeds": {"outer_seed": 123, "inner_seed": 456}}

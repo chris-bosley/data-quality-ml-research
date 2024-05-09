@@ -16,6 +16,7 @@ project > python data_quality_ml_research
 """
 
 import json
+import sys
 import time
 from pathlib import Path
 
@@ -34,7 +35,17 @@ def main():
     Returns:
         None.
     """
-    # Declare configuration variables - should be passed to function, but fix later
+    # Parse configuration file from command line
+    if len(sys.argv) > 1:
+        config_file = sys.argv[1]
+    else:
+        # Could just provide dummy config too
+        print("Error: Must Provide Run Configuration")
+        sys.exit(1)
+
+    config = dq.load_config(config_file)
+    """
+    EXAMPLE CONFIGURATION
     config = {
         "model": "Logistic Regression",
         "data_location": "../data/online_shoppers_intention.csv",
@@ -44,7 +55,7 @@ def main():
         "num_scoring_groups": 5,
         "seeds": {"outer_seed": 123, "inner_seed": 456},
     }
-
+    """
     # Determine output location
     run_timestamp = str(int(time.time()))
     # Grab name of data file to be used
