@@ -105,3 +105,4 @@ ENV/
 .vscode/
 .idea/
 /output_data/
+/notebooks/
