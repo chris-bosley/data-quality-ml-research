@@ -146,6 +146,8 @@ def get_mutation_metrics(datasets, target_col, feature_cols, clf):
 
     mutation_results = {}
     # Iterate through required metrics
+    # Ideally I'd like to set zero_division=np.nan for precision and f1, but handle that later
+    # As is it'll return 0, which is less than ideal. Probably use a dict of lambdas.
     for metricName, metFunc in classification_metrics.items():
         this_metric = []
         for i in datasets:
