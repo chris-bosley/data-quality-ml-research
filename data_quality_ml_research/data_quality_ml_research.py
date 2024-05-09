@@ -7,12 +7,12 @@ This script performs the following steps:
 3. Splits data into training and some number of equally sized training sets.
 4. Mutates the scoring data.
 5. Evaluates model performance on the mutated data.
-6. Saves results to a CSV file.
+6. Saves results and configuration to a CSV file.
 
 **Usage:**
 
 # Example: Run on online shoppers data, evaluate change to zero mutations, write output file.
-project > python data_quality_ml_research
+project > python data_quality_ml_research ./sample_config.json
 """
 
 import json
