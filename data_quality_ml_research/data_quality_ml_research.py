@@ -7,16 +7,20 @@ This script performs the following steps:
 3. Splits data into training and some number of equally sized training sets.
 4. Mutates the scoring data.
 5. Evaluates model performance on the mutated data.
-6. Saves results to a CSV file.
+6. Saves results and configuration to a CSV file.
 
 **Usage:**
 
 # Example: Run on online shoppers data, evaluate change to zero mutations, write output file.
-project > python data_quality_ml_research
+project > python data_quality_ml_research ./sample_config.json
 """
 
+import json
+import sys
+import time
+from pathlib import Path
+
 import pandas as pd
-import os
 from sklearn.linear_model import LogisticRegressionCV
 
 import helpers as dq
@@ -31,28 +35,37 @@ def main():
     Returns:
         None.
     """
+    # Parse configuration file from command line
+    if len(sys.argv) > 1:
+        config_file = sys.argv[1]
+    else:
+        # Could just provide dummy config too
+        print("Error: Must Provide Run Configuration")
+        sys.exit(1)
 
-    # Declare configuration variables
+    config = dq.load_config(config_file)
+    """
+    EXAMPLE CONFIGURATION
     config = {
         "model": "Logistic Regression",
         "data_location": "../data/online_shoppers_intention.csv",
-        "output_path": "../output_data",  # Path to store output files
-        "output_filename": "output.csv",  # Filename for the results
-        "preprocess_data": False,
+        "preprocess_data": 0,
         "training_percent": 0.5,
         "mutator": "change_to_zero",
         "num_scoring_groups": 5,
+        "num_mutation_checks": 100,
         "seeds": {"outer_seed": 123, "inner_seed": 456},
     }
-
-    # Handle potential output file conflicts
-    output_path = config["output_path"]
-    output_filename = config["output_filename"]
-    output_file = os.path.join(output_path, output_filename)
-    if os.path.exists(output_file):
-        print(f"Warning: Output file already exists: {output_file}")
-        print(f"Deleting file...")
-        os.remove(output_file)
+    """
+    # Determine output location
+    run_timestamp = str(int(time.time()))
+    # Grab name of data file to be used
+    data_file_name = config["data_location"].split("/")[-1].split(".")[0]
+    output_dir = Path("../output_data/" + "_".join([data_file_name, run_timestamp]))
+    output_dir.mkdir(parents=True, exist_ok=True)
+    # Output files
+    output_file = "results.csv"
+    output_config = "config.json"
 
     # Declare required classifier
     # Look at default parameters OR quick grid search
@@ -94,10 +107,18 @@ def main():
     # Apply a specified mutation and examine model performance under various severities of data failure.
     # BUG REVIEW Check that mutator is mutating correct proportions...
     mutation_results = dq.collect_mutation_results(
-        data_splits, config, target_col, feature_cols, clf
+        data_splits,
+        config,
+        target_col,
+        feature_cols,
+        clf,
+        num_experiments=config["num_mutation_checks"],
     )
 
-    pd.DataFrame(mutation_results).to_csv(config["result_output_location"])
+    # Write results and config to disk
+    pd.DataFrame(mutation_results).to_csv(output_dir / output_file)
+    with open(output_dir / output_config, "w") as f:
+        json.dump(config, f)
 
 
 if __name__ == "__main__":
