@@ -7,7 +7,7 @@ Data Quality ML Research
 
 
 
-Project files and data to support impact of degrading data quality on existing ML models.
+Project files and data to support research on impact of degrading data quality on pretrained ML models.
 
 
 
