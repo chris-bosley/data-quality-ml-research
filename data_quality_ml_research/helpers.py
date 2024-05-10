@@ -196,7 +196,9 @@ def get_mutations(data, severity, config):
     return mutated_data
 
 
-def collect_mutation_results(data_to_mutate, config, target_col, feature_cols, clf):
+def collect_mutation_results(
+    data_to_mutate, config, target_col, feature_cols, clf, num_experiments=100
+):
     """
     Evaluates a classifier's performance under a series of data mutations.
 
@@ -214,13 +216,15 @@ def collect_mutation_results(data_to_mutate, config, target_col, feature_cols, c
         target_col (str): The name of the column containing the target variable in the DataFrames.
         feature_cols (list): A list of strings representing the names of the feature columns in the DataFrames.
         clf (sklearn.classifier): A trained sklearn classifier object.
+        num_experiments (int): The number of experiments to run. This will generate evenly spaced
+            mutation severities in [0,1]
 
     Returns:
         list: A list of dictionaries containing information about each mutation run, including mutation type,
               severity, and a dictionary of classification metrics for the mutated data.
     """
     all_runs = []
-    for mutation_severity in np.arange(0, 1.01, 0.1):
+    for mutation_severity in [j * 1 / num_experiments for j in range(num_experiments)]:
         # Round here because np float stuff
         mutation_severity = round(mutation_severity, 2)
         # Mutate the data

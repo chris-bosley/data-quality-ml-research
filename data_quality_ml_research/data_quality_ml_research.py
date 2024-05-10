@@ -53,6 +53,7 @@ def main():
         "training_percent": 0.5,
         "mutator": "change_to_zero",
         "num_scoring_groups": 5,
+        "num_mutation_checks": 100,
         "seeds": {"outer_seed": 123, "inner_seed": 456},
     }
     """
