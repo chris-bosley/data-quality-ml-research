@@ -1,1 +1,13 @@
-{"model": "Logistic Regression", "data_location": "../data/online_shoppers_intention.csv", "preprocess_data": false, "training_percent": 0.5, "mutator": "change_to_zero", "num_scoring_groups": 5, "seeds": {"outer_seed": 123, "inner_seed": 456}}
+{
+    "data_location": "../data/online_shoppers_intention.csv",
+    "model": "Logistic Regression",
+    "mutator": "change_to_zero",
+    "num_mutation_checks": 10,
+    "num_scoring_groups": 5,
+    "preprocess_data": false,
+    "seeds": {
+        "outer_seed": 123,
+        "inner_seed": 456
+    },
+    "training_percent": 0.5
+}

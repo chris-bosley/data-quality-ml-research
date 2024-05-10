@@ -49,7 +49,7 @@ def main():
     config = {
         "model": "Logistic Regression",
         "data_location": "../data/online_shoppers_intention.csv",
-        "preprocess_data": False,
+        "preprocess_data": 0,
         "training_percent": 0.5,
         "mutator": "change_to_zero",
         "num_scoring_groups": 5,
@@ -107,7 +107,12 @@ def main():
     # Apply a specified mutation and examine model performance under various severities of data failure.
     # BUG REVIEW Check that mutator is mutating correct proportions...
     mutation_results = dq.collect_mutation_results(
-        data_splits, config, target_col, feature_cols, clf
+        data_splits,
+        config,
+        target_col,
+        feature_cols,
+        clf,
+        num_experiments=config["num_mutation_checks"],
     )
 
     # Write results and config to disk

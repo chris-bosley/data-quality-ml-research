@@ -3,7 +3,13 @@ import json
 
 import pandas as pd
 import numpy as np
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+from sklearn.metrics import (
+    accuracy_score,
+    precision_score,
+    recall_score,
+    f1_score,
+    balanced_accuracy_score,
+)
 
 from mutation import Mutator
 
@@ -126,7 +132,7 @@ def get_mutation_metrics(datasets, target_col, feature_cols, clf):
 
     This function ingests a list of DataFrames, the target column name,
     the feature column names, and a trained classifier, and calculates a set of classification
-    metrics (precision, recall, accuracy, F1-score) for each dataset in the list.
+    metrics (precision, recall, accuracy, F1-score, balanced accuracy) for each dataset in the list.
 
     Args:
         datasets (list): A list of pandas DataFrames.
@@ -139,23 +145,34 @@ def get_mutation_metrics(datasets, target_col, feature_cols, clf):
               the corresponding metric scores for each dataset in the `datasets` list.
     """
     # Declare metrics to be calculated
-    classification_metrics = {
-        "precision": precision_score,
-        "recall": recall_score,
-        "accuracy": accuracy_score,
-        "f1": f1_score,
-    }
+    # Each metric is defined with three required elements - name, function & arguments.
+    classification_metrics = [
+        {
+            "name": "precision",
+            "function": precision_score,
+            "args": {"zero_division": np.nan},
+        },
+        {"name": "recall", "function": recall_score, "args": {"zero_division": np.nan}},
+        {"name": "accuracy", "function": accuracy_score, "args": {}},
+        {"name": "f1", "function": f1_score, "args": {"zero_division": np.nan}},
+        {"name": "balanced-accuracy", "function": balanced_accuracy_score, "args": {}},
+    ]
 
+    # Create results object
     mutation_results = {}
     # Iterate through required metrics
     # Ideally I'd like to set zero_division=np.nan for precision and f1, but handle that later
     # As is it'll return 0, which is less than ideal. Probably use a dict of lambdas.
-    for metricName, metFunc in classification_metrics.items():
+    for metFunc in classification_metrics:
         this_metric = []
         for i in datasets:
             # Calculate metric for each dataset
-            this_metric.append(metFunc(i[target_col], clf.predict(i[feature_cols])))
-        mutation_results[metricName] = this_metric
+            this_metric.append(
+                metFunc["function"](
+                    i[target_col], clf.predict(i[feature_cols]), **metFunc["args"]
+                )
+            )
+        mutation_results[metFunc["name"]] = this_metric
     return mutation_results
 
 
