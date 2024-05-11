@@ -17,6 +17,8 @@ Defines a Mutator class with methods for data mutation tasks.
     specified categorical column to a new, unseen category.
 5. `remove_class(self, df, column_name, class_seed=None, mutator_seed=None)`: Randomly selects a class from a
     categorical column and removes it, replacing all members with existing classes.
+5. `add_noise(self, df, column_name, distribution="normal", mean=0, std=0.1, low=None, high=None, scale=1)`:
+    Adds normal, uniform or exponential noise to a column.
 
 **Usage:**
 
