@@ -29,7 +29,7 @@ print(mutatedData)
 # Example 2: Change 30% of values in columns 'col1' and 'col2' to 0
 data = pd.DataFrame({'col1': [1, 2, 3, 4], 'col2': [5, 6, 7, 8]})
 mutator = Mutator()
-mutatedData = mutator.change_to_zero(data, columns=['col1', 'col2'], percentage=0.3, seed=42)
+mutatedData = mutator.change_to_zero(data, columns=['col1', 'col2'], percentage=0.3, seed=42, seed_modifier=12)
 print(mutatedData)
 
 # Example 3: Transpose two data columns
@@ -67,16 +67,19 @@ class Mutator:
         """
         return df
 
-    def change_to_zero(self, df, columns, percentage=0.0, seed=789, seed_modifier=53):
+    def change_to_zero(self, df, columns, percentage, seed=None, seed_modifier=None):
         """
-        Randomly changes a specified percentage of numerical values in each column of a DataFrame to 0.
+        Randomly changes a specified percentage of numerical values in each column of a DataFrame to 0. Note: This will
+        alter the index for the returned DataFrame
 
         Args:
             df (pandas.DataFrame): The DataFrame to mutate.
             columns (list): A list of column names to mutate.
-            percentage (float, optional): The percentage of values to change to 0 in each column. Defaults to 0.0.
-            seed (int, optional): The random seed for randomizing the DataFrame. Defaults to None (non-deterministic).
-            seed_modifier (int, optional): The value used to salt the inner seed for each column. Defaults to 53.
+            percentage (float, optional): The percentage of values to change to 0 in each column.
+            seed (int, optional): The random seed for randomizing the DataFrame. If None, a random seed will be
+                generated. Defaults to None.
+            seed_modifier (int, optional): The random seed for randomizing each column during mutation.
+                If None, a random seed will be generated. Defaults to None.
 
         Raises:
             ValueError: If the percentage is not between 0 and 1.
@@ -94,31 +97,30 @@ class Mutator:
                 raise TypeError(
                     f"Column '{col}' must exist and contain numerical data."
                 )
+        # Make  copy for changes
+        df_internal = df.copy(deep=True)
+        # Generate a random seed if none is provided
+        if seed is None:
+            seed = np.random.randint(100000)
 
-        # Set the seed
-        np.random.seed(seed)
-
-        # Iterate through columns
+            # Iterate through columns
         for col in columns:
-            # Create an inner seed to improve randomization in subsequent columns
+            # Set inner seed using random component and column hash
+            if seed_modifier is None:
+                seed_modifier = np.random.randint(100000)
+
             inner_seed = seed * seed_modifier + (hash(col) % 100000)
-            np.random.seed(inner_seed)
 
-            # Randomize the row order for this column
-            df_shuffled = df.sample(frac=1, random_state=inner_seed)
+            # Randomly select indices to modify
+            num_values_to_change = int(percentage * len(df_internal))
+            random_indices = df_internal.sample(
+                num_values_to_change, random_state=inner_seed
+            ).index
 
-            # Calculate the number of values to change
-            num_values_to_change = int(percentage * len(df_shuffled))
+            # Modify values at random indices to 0
+            df_internal.loc[random_indices, col] = 0
 
-            # Modify values in the current column until the target number of changes is reached
-            for j in range(len(df_shuffled)):
-                if pd.api.types.is_numeric_dtype(df_shuffled.loc[j, col]):
-                    df_shuffled.loc[j, col] = 0
-                    num_values_to_change -= 1
-                    if num_values_to_change == 0:
-                        break  # Early termination if we're done with changes
-
-        return df_shuffled  # Return the mutated DataFrame
+        return df_internal  # Return the mutated DataFrame
 
     def transpose_columns(self, df, col1, col2):
         """Transposes two columns in the dataset to simulate a key transposition.
