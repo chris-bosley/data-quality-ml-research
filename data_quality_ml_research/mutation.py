@@ -41,14 +41,29 @@ print(mutatedData)
 # Example 4: Introduce a new categorical class and randomly assign 50% of entries to the new class
 data = pd.DataFrame({'col1': [1, 2, 3, 4], 'col2': [5, 6, 7, 8]})
 mutator = Mutator()
-mutatedData = mutator.add_categorical_class(data, 'col2'', percentage=0.5, seed=314)
+mutatedData = mutator.add_categorical_class(data, 'col2', percentage=0.5, seed=314)
 print(mutatedData)
 
 # Example 5: Randomly lose a class and replace all members with other classes
 data = pd.DataFrame({'col1': [1, 2, 3, 4], 'col2': [5, 6, 7, 8]})
 mutator = Mutator()
-mutatedData = mutator.remove_class(data, `col2``, class_seed=314, mutator_seed=1718)
+mutatedData = mutator.remove_class(data, 'col2', class_seed=314, mutator_seed=1718)
 print(mutatedData)
+
+# Example 6: Add normal(0, 0.1) noise
+data = pd.DataFrame({'col1': [1, 2, 3, 4], 'col2': [5, 6, 7, 8]})
+mutator = Mutator()
+df_with_normal_noise = add_noise(data, 'col2', distribution="normal", mean=0, std=0.1)
+
+# Example 7: Add uniform(0,1) noise
+data = pd.DataFrame({'col1': [1, 2, 3, 4], 'col2': [5, 6, 7, 8]})
+mutator = Mutator()
+df_with_uniform_noise = add_noise(data, "col1", distribution="uniform", low=0, high=1)
+
+# Example 8: Add exponential(1) noise
+data = pd.DataFrame({'col1': [1, 2, 3, 4], 'col2': [5, 6, 7, 8]})
+mutator = Mutator()
+df_with_exponential_noise = add_noise(data, "col1", distribution="exponential", scale=1)
 """
 
 
@@ -133,14 +148,14 @@ class Mutator:
         Raises:
             TypeError: If either column does not exist in the DataFrame.
         """
-
+        df_internal = df.copy(deep=True)
         # Check that both columns exist
         for col in [col1, col2]:
-            if col not in df.columns:
+            if col not in df_internal.columns:
                 raise TypeError(f"Column {col} must exist in DataFrame.")
 
         # Transpose columns
-        df_transposed = df.rename({col1: col2, col2: col1})
+        df_transposed = df_internal.rename({col1: col2, col2: col1})
 
         return df_transposed
 
@@ -160,16 +175,17 @@ class Mutator:
                         or if the percentage is not between 0 and 1.
         """
 
+        df_internal = df.copy(deep=True)
         # Check if the column exists
-        if column_name not in df.columns:
+        if column_name not in df_internal.columns:
             raise ValueError(f"Column '{column_name}' does not exist in the DataFrame.")
 
         # Check if the column is numeric
-        if not pd.api.types.is_numeric_dtype(df[column_name]):
+        if not pd.api.types.is_numeric_dtype(df_internal[column_name]):
             raise ValueError(f"Column '{column_name}' is not numeric.")
 
         # Check if the column is of integer type
-        if not pd.api.types.is_integer_dtype(df[column_name]):
+        if not pd.api.types.is_integer_dtype(df_internal[column_name]):
             raise ValueError(f"Column '{column_name}' is not of integer type.")
 
         # Set random seed (if provided)
@@ -177,7 +193,7 @@ class Mutator:
             random.seed(seed)
 
         # Get existing distinct values
-        existing_values = df[column_name].unique()
+        existing_values = df_internal[column_name].unique()
 
         # Infer a new class label (assuming integer increment)
         new_class_label = max(existing_values) + 1
@@ -186,15 +202,15 @@ class Mutator:
         if percentage > 0:
             if percentage < 0 or percentage > 1:
                 raise ValueError("Percentage must be between 0 and 1.")
-            num_rows = len(df)
+            num_rows = len(df_internal)
             num_to_change = int(percentage * num_rows)
 
             # Sample indices without replacement using random.sample
             indices_to_change = random.sample(range(num_rows), num_to_change)
             for i in indices_to_change:
-                df.loc[i, column_name] = new_class_label
+                df_internal.loc[i, column_name] = new_class_label
 
-        return df
+        return df_internal
 
     def remove_class(self, df, column_name, class_seed=None, mutator_seed=None):
         """
@@ -212,12 +228,13 @@ class Mutator:
                         or if there are less than two unique classes in the column.
         """
 
+        df_internal = df.copy(deep=True)
         # Check if the column exists
-        if column_name not in df.columns:
+        if column_name not in df_internal.columns:
             raise ValueError(f"Column '{column_name}' does not exist in the DataFrame.")
 
         # Check if there are at least two unique classes
-        if len(df[column_name].unique()) < 2:
+        if len(df_internal[column_name].unique()) < 2:
             raise ValueError("There must be at least two unique classes in the column.")
 
         # Set random seeds (if provided)
@@ -225,7 +242,7 @@ class Mutator:
             random.seed(class_seed)
 
         # Get all classes
-        all_classes = df[column_name].unique()
+        all_classes = df_internal[column_name].unique()
 
         # Randomly select a class to remove using the selection seed
         class_to_remove = random.choice(all_classes)
@@ -234,7 +251,9 @@ class Mutator:
         remaining_classes = all_classes[all_classes != class_to_remove]
 
         # Get indices of entries with the class to remove
-        indices_to_change = df[df[column_name] == class_to_remove].index
+        indices_to_change = df_internal[
+            df_internal[column_name] == class_to_remove
+        ].index
 
         # Set seed for member redistribution (if provided)
         if mutator_seed is not None:
@@ -244,6 +263,55 @@ class Mutator:
         new_classes = random.choices(remaining_classes, k=len(indices_to_change))
 
         # Update the DataFrame with the new classes
-        df.loc[indices_to_change, column_name] = new_classes
+        df_internal.loc[indices_to_change, column_name] = new_classes
 
-        return df
+        return df_internal
+
+    def add_noise(
+        self,
+        df,
+        column_name,
+        distribution="normal",
+        mean=0,
+        std=0.1,
+        low=None,
+        high=None,
+        scale=1,
+    ):
+        """
+        Adds random noise to a column in a pandas dataframe.
+
+        Args:
+            df: A Pandas DataFrame.
+            column_name: Name of the column to add noise to.
+            distribution: The type of noise distribution to use (default: "normal").
+                Supported distributions: "normal", "uniform", "exponential".
+            mean: The mean of the noise (default: 0).
+            std: The standard deviation of the noise (default: 0.1).
+                Used for normal distribution only.
+            low: The lower bound of the noise distribution (default: None).
+                Used for uniform distribution only.
+            high: The upper bound of the noise distribution (default: None).
+                Used for uniform distribution only.
+            scale: The scale parameter of the exponential distribution (default: 1).
+                Controls the spread of the distribution.
+
+        Returns:
+            A new pandas dataframe with the noise added to the specified column.
+        """
+        df_internal = df.copy(deep=True)
+        if distribution == "normal":
+            noise = np.random.normal(loc=mean, scale=std, size=len(df))
+        elif distribution == "uniform":
+            if low is None or high is None:
+                raise ValueError(
+                    "low and high must be specified for uniform distribution"
+                )
+            noise = np.random.uniform(low=low, high=high, size=len(df))
+        elif distribution == "exponential":
+            noise = np.random.exponential(scale=scale, size=len(df))
+        else:
+            raise ValueError("Unsupported noise distribution:", distribution)
+
+        df_internal[column_name] = df_internal[column_name] + noise
+        return df_internal
