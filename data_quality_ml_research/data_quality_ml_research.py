@@ -22,6 +22,7 @@ from pathlib import Path
 
 import pandas as pd
 from sklearn.linear_model import LogisticRegressionCV
+from sklearn.svm import SVC
 
 import helpers as dq
 
@@ -67,9 +68,28 @@ def main():
     output_file = "results.csv"
     output_config = "config.json"
 
-    # Declare required classifier
-    # Look at default parameters OR quick grid search
-    clf = LogisticRegressionCV(Cs=[0.1, 1, 10], fit_intercept=True)
+    # Declare required classifiers
+    model_type = config["model"]
+
+    models = {
+        "Logistic Regression": {
+            "name": "Logistic Regression",
+            "model": LogisticRegressionCV,
+            "args": {"Cs": 10, "fit_intercept": True, "random_state": 123},
+        },
+        "Poly SVC": {
+            "name": "SVC",
+            "model": SVC,
+            "args": {
+                "kernel": "poly",
+                "class_weight": "balanced",
+                "probability": False,
+                "random_state": 123,
+            },
+        },
+    }
+
+    clf = models[model_type]["model"](**models[model_type]["args"])
 
     # Ingest dataset passed from command line
     data = dq.read_data(config["data_location"])

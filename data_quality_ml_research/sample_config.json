@@ -1,6 +1,6 @@
 {
     "data_location": "../data/online_shoppers_intention.csv",
-    "model": "Logistic Regression",
+    "model": "Poly SVC",
     "mutator": "change_to_zero",
     "num_mutation_checks": 10,
     "num_scoring_groups": 5,

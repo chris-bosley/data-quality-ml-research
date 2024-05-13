@@ -43,7 +43,7 @@ print(mutatedData)
 # Example 4: Introduce a new categorical class and randomly assign 50% of entries to the new class
 data = pd.DataFrame({'col1': [1, 2, 3, 4], 'col2': [5, 6, 7, 8]})
 mutator = Mutator()
-mutatedData = mutator.add_categorical_class(data, 'col2', percentage=0.5, seed=314)
+mutatedData = mutator.add_categorical_class(data, 'col2',w percentage=0.5, seed=314)
 print(mutatedData)
 
 # Example 5: Randomly lose a class and replace all members with other classes
