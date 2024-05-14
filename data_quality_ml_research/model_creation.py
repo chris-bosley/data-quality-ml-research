@@ -1,0 +1,56 @@
+from sklearn.linear_model import LogisticRegressionCV
+from sklearn.svm import SVC
+
+"""
+This module provides a function to create machine learning models based on the specified type.
+
+It currently supports two models:
+
+- Logistic Regression
+- Poly SVC
+
+All models use a random state for reproducibility.
+
+**Error Handling:**
+
+- Raises a ValueError if an invalid model_type is provided.
+
+**Example Usage:**
+
+```python
+from model_creation import create_model
+
+try:
+    model = create_model("Logistic Regression")
+    print(f"Created model: {model}")
+except ValueError as e:
+    print(f"Error creating model: {e}")
+"""
+
+
+def create_model(model_type="Logistic Regression", model_state=123):
+
+    model_options = {
+        "Logistic Regression": {
+            "name": "Logistic Regression",
+            "model": LogisticRegressionCV,
+            "args": {"Cs": 10, "fit_intercept": True, "random_state": model_state},
+        },
+        "Poly SVC": {
+            "name": "SVC",
+            "model": SVC,
+            "args": {
+                "kernel": "poly",
+                "class_weight": "balanced",
+                "probability": False,
+                "random_state": model_state,
+            },
+        },
+    }
+
+    if model_type not in model_options:
+        raise ValueError(f"Invalid model_type: {model_type}")
+
+    clf = model_options[model_type]["model"](**model_options[model_type]["args"])
+
+    return clf
