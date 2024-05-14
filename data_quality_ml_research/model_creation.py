@@ -8,6 +8,8 @@ It currently supports two models:
 
 - Logistic Regression
 - Poly SVC
+- Linear SVC
+- RBF SVC
 
 All models use a random state for reproducibility.
 
@@ -32,15 +34,31 @@ def create_model(model_type="Logistic Regression", model_state=123):
 
     model_options = {
         "Logistic Regression": {
-            "name": "Logistic Regression",
             "model": LogisticRegressionCV,
             "args": {"Cs": 10, "fit_intercept": True, "random_state": model_state},
         },
         "Poly SVC": {
-            "name": "SVC",
             "model": SVC,
             "args": {
                 "kernel": "poly",
+                "class_weight": "balanced",
+                "probability": False,
+                "random_state": model_state,
+            },
+        },
+        "Linear SVC": {
+            "model": SVC,
+            "args": {
+                "kernel": "linear",
+                "class_weight": "balanced",
+                "probability": False,
+                "random_state": model_state,
+            },
+        },
+        "RBF SVC": {
+            "model": SVC,
+            "args": {
+                "kernel": "rbf",
                 "class_weight": "balanced",
                 "probability": False,
                 "random_state": model_state,
