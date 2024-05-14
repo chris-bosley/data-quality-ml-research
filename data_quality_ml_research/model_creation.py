@@ -1,5 +1,8 @@
 from sklearn.linear_model import LogisticRegressionCV
 from sklearn.svm import SVC
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.neural_network import MLPClassifier
+
 
 """
 This module provides a function to create machine learning models based on the specified type.
@@ -10,6 +13,8 @@ It currently supports two models:
 - Poly SVC
 - Linear SVC
 - RBF SVC
+- Random Forest
+- Neural Network
 
 All models use a random state for reproducibility.
 
@@ -61,6 +66,23 @@ def create_model(model_type="Logistic Regression", model_state=123):
                 "kernel": "rbf",
                 "class_weight": "balanced",
                 "probability": False,
+                "random_state": model_state,
+            },
+        },
+        "Random Forest": {
+            "model": RandomForestClassifier,
+            "args": {
+                "n_estimators": 100,
+                "criterion": "gini",
+                "class_weight": "balanced",
+                "random_state": model_state,
+            },
+        },
+        "Neural Network": {
+            "model": MLPClassifier,
+            "args": {
+                "hidden_layer_sizes": [27, 7, 10],  # Umm.... we can do better here haha
+                "activation": "relu",
                 "random_state": model_state,
             },
         },
