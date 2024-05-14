@@ -21,9 +21,9 @@ import time
 from pathlib import Path
 
 import pandas as pd
-from sklearn.linear_model import LogisticRegressionCV
 
 import helpers as dq
+from model_creation import create_model
 
 
 def main():
@@ -67,9 +67,8 @@ def main():
     output_file = "results.csv"
     output_config = "config.json"
 
-    # Declare required classifier
-    # Look at default parameters OR quick grid search
-    clf = LogisticRegressionCV(Cs=[0.1, 1, 10], fit_intercept=True)
+    # Declare required classifiers
+    clf = create_model(model_type=config["model"])
 
     # Ingest dataset passed from command line
     data = dq.read_data(config["data_location"])
