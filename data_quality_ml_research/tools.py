@@ -1,4 +1,5 @@
-# This filename needs changed
+# Perhaps refactor to split modeling tools from general tools
+import ast
 import json
 
 import pandas as pd
@@ -216,6 +217,7 @@ def get_mutations(data, severity, config):
 def collect_mutation_results(
     data_to_mutate, config, target_col, feature_cols, clf, num_experiments=100
 ):
+    # Does this really need to hold the mutation?? IT's also in the config file...
     """
     Evaluates a classifier's performance under a series of data mutations.
 
@@ -281,3 +283,50 @@ def load_config(configuration_file):
     except json.JSONDecodeError as e:
         # raise json.JSONDecodeError(f"JSON Parsing Error: {e}", e.doc, e.pos)
         print(f"JSON Parsing Error: {e} at {e.pos} in {e.doc}")
+
+
+def pick_up_run_data(run_path: str) -> pd.DataFrame:
+    """
+    This function reads and processes data from a specified output path.
+
+    Args:
+        run_path (str): The path to the directory containing the run data.
+            This directory is expected to have a 'results.csv' file and a 'config.json' file.
+
+    Returns:
+        pd.DataFrame: A DataFrame containing the processed data.
+
+    Raises:
+        FileNotFoundError: If either 'results.csv' or 'config.json' is not found in the run path.
+    """
+
+    try:
+        # Read results data
+        df = pd.read_csv(f"{run_path}/results.csv")
+
+        # Load model name from config
+        config = load_config(f"{run_path}/config.json")
+        df["model"] = config["model"]
+
+        # Process metrics column
+        # This is janky. Need to define metrics for this AND the metrics calculator outside functions
+        for met in ["precision", "recall", "accuracy", "f1", "balanced-accuracy"]:
+            # Extract metric values
+            df[met] = df["metrics"].apply(lambda x: np.array(ast.literal_eval(x)[met]))
+
+            # Remove rows with missing values in the current metric
+            df = df[~np.isnan(df[met])]
+
+            # Calculate mean, standard deviation, and median of each metric
+            df[f"mean_{met}"] = df[met].apply(np.mean)
+            df[f"sd_{met}"] = df[met].apply(np.std)
+            df[f"median_{met}"] = df[met].apply(np.median)
+
+        # Drop the original metrics column
+        df = df.drop(columns=["metrics"])
+
+        return df
+
+    except FileNotFoundError as e:
+        print(f"Error: Data files not found in run path: {run_path}")
+        raise e  # Re-raise the exception for further handling

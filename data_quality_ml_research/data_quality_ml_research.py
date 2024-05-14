@@ -22,7 +22,7 @@ from pathlib import Path
 
 import pandas as pd
 
-import helpers as dq
+import tools as data_tools
 from model_creation import create_model
 
 
@@ -43,7 +43,7 @@ def main():
         print("Error: Must Provide Run Configuration")
         sys.exit(1)
 
-    config = dq.load_config(config_file)
+    config = data_tools.load_config(config_file)
     """
     EXAMPLE CONFIGURATION
     config = {
@@ -71,7 +71,7 @@ def main():
     clf = create_model(model_type=config["model"])
 
     # Ingest dataset passed from command line
-    data = dq.read_data(config["data_location"])
+    data = data_tools.read_data(config["data_location"])
 
     # We'll also have to handle data more carefully than this... this is a bit lazy
     data.drop(["Month", "VisitorType", "Weekend"], axis=1, inplace=True)
@@ -90,7 +90,7 @@ def main():
         scoring_proportions.append(scoring_group_size)
 
     # Split data into training and specified number of non-training datasets
-    data_splits = dq.random_nonintersecting_subsets(
+    data_splits = data_tools.random_nonintersecting_subsets(
         data, proportions=scoring_proportions, seed=config["seeds"]["inner_seed"]
     )
 
@@ -105,7 +105,7 @@ def main():
     # Mutate all datasets
     # Apply a specified mutation and examine model performance under various severities of data failure.
     # BUG REVIEW Check that mutator is mutating correct proportions...
-    mutation_results = dq.collect_mutation_results(
+    mutation_results = data_tools.collect_mutation_results(
         data_splits,
         config,
         target_col,
@@ -115,7 +115,7 @@ def main():
     )
 
     # Write results and config to disk
-    pd.DataFrame(mutation_results).to_csv(output_dir / output_file)
+    pd.DataFrame(mutation_results).to_csv(output_dir / output_file, index=False)
     with open(output_dir / output_config, "w") as f:
         json.dump(config, f)
 
