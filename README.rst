@@ -10,7 +10,7 @@ Data Quality ML Research
 Project files and data to support research on impact of degrading data quality on pretrained ML models.
 
 Configuration Specification
-=====
+-------
 
 Runs are to be configured with a json file specified when calling the package from the command line.
 
@@ -58,7 +58,7 @@ Runs are to be configured with a json file specified when calling the package fr
             * scale for exponential noise
 
 Example Configuration
-=====
+-------
 
 ```
 {
@@ -78,12 +78,12 @@ Example Configuration
 ```
 
 Features
-=====
+-------
 
 * TODO
 
 Credits
-=====
+-------
 
 This package was created with Cookiecutter_ and the `audreyr/cookiecutter-pypackage`_ project template.
 
