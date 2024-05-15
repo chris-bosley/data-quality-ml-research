@@ -1,13 +1,14 @@
 {
     "data_location": "../data/online_shoppers_intention.csv",
     "model": "Logistic Regression",
-    "mutator": "change_to_zero",
+    "mutator": "add_noise",
     "num_mutation_checks": 10,
+    "mutation_target": "e",
     "num_scoring_groups": 5,
-    "preprocess_data": false,
     "seeds": {
         "outer_seed": 123,
         "inner_seed": 456
     },
-    "training_percent": 0.5
+    "training_percent": 0.5,
+    "noise_arguments": {"distribution": "uniform", "mean": 0, "std": 1, "low": 0, "high": 100, "scale":2}
 }

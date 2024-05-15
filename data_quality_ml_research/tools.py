@@ -198,18 +198,65 @@ def get_mutations(data, severity, config):
         list: A list of pandas DataFrames containing the mutated versions of the input DataFrames.
     """
     # Declare mutator
+    valid_mutators = [
+        "change_to_zero",
+        "transpose_columns",
+        "add_categorical_class",
+        "remove_class",
+        "add_noise",
+    ]
+    # Declare mutator
     mutator = Mutator()
+
+    if config["mutator"] not in valid_mutators:
+        raise ValueError(
+            f"Error: {config['mutator']} invalid. Must be one of {valid_mutators}"
+        )
     mutated_data = []
     for i in data:
+        if config["mutator"] == "change_to_zero":
+            mutator_method = mutator.change_to_zero
+            mutator_args = {
+                "df": i,
+                "columns": config["mutation_target"],
+                "percentage": severity,
+                "seed": config["seeds"]["outer_seed"],
+                "seed_modifier": config["seeds"]["inner_seed"],
+            }
+        elif config["mutator"] == "transpose_columns":
+            mutator_method = mutator.transpose_columns
+            mutator_args = {
+                "df": i,
+                "col1": config["mutation_target"][0],
+                "col2": config["mutation_target"][1],
+            }
+        elif config["mutator"] == "add_categorical_class":
+            mutator_method = mutator.add_categorical_class
+            mutator_args = {
+                "df": i,
+                "column_name": config["mutation_target"],
+                "percentage": severity,
+                "seed": config["seeds"]["outer_seed"],
+            }
+        elif config["mutator"] == "remove_class":
+            mutator_method = mutator.remove_class
+            mutator_args = {
+                "df": i,
+                "column_name": config["mutation_target"],
+                "class_seed": config["seeds"]["outer_seed"],
+                "mutator_seed": config["seeds"]["inner_seed"],
+            }
+        elif config["mutator"] == "add_noise":
+            mutator_method = mutator.add_noise
+            mutator_args = {"df": i, "column_name": config["mutation_target"]}
+            mutator_args.update(config["noise_arguments"])
+        else:
+            raise ValueError(
+                f"Error: {config['mutator']} invalid. Must be one of {valid_mutators}"
+            )
+
         # induce mutation on each dataset
-        mutated = mutator.change_to_zero(
-            i,
-            # NEED TO CONFIG COLUMN IN FUNCTION LOL
-            columns=["PageValues"],
-            percentage=severity,
-            seed=config["seeds"]["outer_seed"],
-            seed_modifier=config["seeds"]["inner_seed"],
-        )
+        mutated = mutator_method(**mutator_args)
         mutated_data.append(mutated)
     return mutated_data
 
