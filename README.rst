@@ -13,10 +13,10 @@ Configuration Specification
 --------
 Runs are to be configured with a json file specified when calling the package from the command line.
 
-Example configuration:
+Example configuration
 ________
 
-```javascript
+```
 {
 "data_location": "../data/online_shoppers_intention.csv",
 "model": "Logistic Regression",
