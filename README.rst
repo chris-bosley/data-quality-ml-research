@@ -13,9 +13,8 @@ Configuration Specification
 --------
 Runs are to be configured with a json file specified when calling the package from the command line.
 
-Example configuration
-________
-
+Example Configuration
+--------
 ```
 {
 "data_location": "../data/online_shoppers_intention.csv",
