@@ -157,9 +157,9 @@ class Mutator:
                 raise TypeError(f"Column {col} must exist in DataFrame.")
 
         # Transpose columns
-        df_transposed = df_internal.rename({col1: col2, col2: col1})
+        df_internal[col1], df_internal[col2] = df_internal[col2], df_internal[col1]
 
-        return df_transposed
+        return df_internal
 
     def add_categorical_class(self, df, column_name, percentage=0.0, seed=None):
         """
@@ -192,7 +192,7 @@ class Mutator:
 
         # Set random seed (if provided)
         if seed is not None:
-            random.seed(seed)
+            np.random.seed(seed)
 
         # Get existing distinct values
         existing_values = df_internal[column_name].unique()
@@ -201,14 +201,18 @@ class Mutator:
         new_class_label = max(existing_values) + 1
 
         # Randomly modify entries to the new class (if applicable)
-        if percentage > 0:
+        if percentage != 0:
             if percentage < 0 or percentage > 1:
                 raise ValueError("Percentage must be between 0 and 1.")
+            else:
+                pass
             num_rows = len(df_internal)
             num_to_change = int(percentage * num_rows)
 
             # Sample indices without replacement using random.sample
-            indices_to_change = random.sample(range(num_rows), num_to_change)
+            indices_to_change = np.random.choice(
+                range(num_rows), num_to_change, replace=False
+            )
             for i in indices_to_change:
                 df_internal.loc[i, column_name] = new_class_label
 

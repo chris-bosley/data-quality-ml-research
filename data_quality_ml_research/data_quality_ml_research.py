@@ -49,7 +49,7 @@ def main():
     config = {
         "model": "Logistic Regression",
         "data_location": "../data/online_shoppers_intention.csv",
-        "preprocess_data": 0,
+        "preprocess_data": 0, <-----I think this should be drop?
         "training_percent": 0.5,
         "mutator": "change_to_zero",
         "num_scoring_groups": 5,
@@ -104,7 +104,6 @@ def main():
 
     # Mutate all datasets
     # Apply a specified mutation and examine model performance under various severities of data failure.
-    # BUG REVIEW Check that mutator is mutating correct proportions...
     mutation_results = data_tools.collect_mutation_results(
         data_splits,
         config,
