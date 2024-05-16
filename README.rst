@@ -5,7 +5,7 @@ Data Quality ML Research
 Project files and data to support research on impact of degrading data quality on pretrained ML models.
 
 Configuration Specification
--------
+---------------------------
 
 Runs are to be configured with a json file specified when calling the package from the command line.
 
@@ -53,27 +53,26 @@ Runs are to be configured with a json file specified when calling the package fr
             * scale for exponential noise
 
 Example Configuration
--------
+---------------------
 
-```
-{
-"data_location": "../data/online_shoppers_intention.csv",
-"model": "Logistic Regression",
-"mutator": "add_noise",
-"num_mutation_checks": 10,
-"mutation_target": "ExitRates",
-"num_scoring_groups": 5,
-"seeds": {
-"outer_seed": 123,
-"inner_seed": 456
-},
-"training_percent": 0.5,
-"noise_arguments": {"distribution": "exponential", "mean": 0, "std": 1, "low": 0, "high": 100, "scale":2}
-}
-```
+.. code-block:: none
+    {
+    "data_location": "../data/online_shoppers_intention.csv",
+    "model": "Logistic Regression",
+    "mutator": "add_noise",
+    "num_mutation_checks": 10,
+    "mutation_target": "ExitRates",
+    "num_scoring_groups": 5,
+    "seeds": {
+    "outer_seed": 123,
+    "inner_seed": 456
+    },
+    "training_percent": 0.5,
+    "noise_arguments": {"distribution": "exponential", "mean": 0, "std": 1, "low": 0, "high": 100, "scale":2}
+    }
 
 Features
--------
+--------
 
 * TODO
 
