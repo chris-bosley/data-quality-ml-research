@@ -3,12 +3,12 @@
     "model": "Logistic Regression",
     "mutator": "add_noise",
     "num_mutation_checks": 10,
-    "mutation_target": "e",
+    "mutation_target": "ExitRates",
     "num_scoring_groups": 5,
     "seeds": {
         "outer_seed": 123,
         "inner_seed": 456
     },
     "training_percent": 0.5,
-    "noise_arguments": {"distribution": "uniform", "mean": 0, "std": 1, "low": 0, "high": 100, "scale":2}
+    "noise_arguments": {"distribution": "exponential", "mean": 0, "std": 1, "low": 0, "high": 100, "scale":2}
 }
