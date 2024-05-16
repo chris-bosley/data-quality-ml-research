@@ -54,7 +54,9 @@ Runs are to be configured with a json file specified when calling the package fr
 
 Example Configuration
 ---------------------
-.. code-block:: none
+
+This is an example of a valid configuration file::
+
     {
     "data_location": "../data/online_shoppers_intention.csv",
     "model": "Logistic Regression",
