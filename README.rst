@@ -58,18 +58,25 @@ Example Configuration
 This is an example of a valid configuration file::
 
     {
-    "data_location": "../data/online_shoppers_intention.csv",
-    "model": "Logistic Regression",
-    "mutator": "add_noise",
-    "num_mutation_checks": 10,
-    "mutation_target": "ExitRates",
-    "num_scoring_groups": 5,
-    "seeds": {
-    "outer_seed": 123,
-    "inner_seed": 456
-    },
-    "training_percent": 0.5,
-    "noise_arguments": {"distribution": "exponential", "mean": 0, "std": 1, "low": 0, "high": 100, "scale":2}
+        "data_location": "../data/online_shoppers_intention.csv",
+        "model": "Logistic Regression",
+        "mutator": "add_noise",
+        "num_mutation_checks": 10,
+        "mutation_target": "ExitRates",
+        "num_scoring_groups": 5,
+        "seeds": {
+            "outer_seed": 123,
+            "inner_seed": 456
+            },
+        "training_percent": 0.5,
+        "noise_arguments": {
+            "distribution": "exponential",
+            "mean": 0,
+            "std": 1,
+            "low": 0,
+            "high": 100,
+            "scale":2
+            }
     }
 
 Features
