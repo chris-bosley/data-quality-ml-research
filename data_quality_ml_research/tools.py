@@ -360,10 +360,8 @@ def pick_up_run_data(run_path: str) -> pd.DataFrame:
         for met in ["precision", "recall", "accuracy", "f1", "balanced-accuracy"]:
             # Extract metric values
             df[met] = df["metrics"].apply(lambda x: np.array(ast.literal_eval(x)[met]))
-
-            # Remove rows with missing values in the current metric
-            df = df[~np.isnan(df[met])]
-
+            # Remove NaN
+            df[met] = df[met].apply(lambda x: x[~np.isnan(x)])
             # Calculate mean, standard deviation, and median of each metric
             df[f"mean_{met}"] = df[met].apply(np.mean)
             df[f"sd_{met}"] = df[met].apply(np.std)

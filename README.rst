@@ -23,7 +23,7 @@ Runs are to be configured with a json file specified when calling the package fr
         * Specifies number of mutation checks to run. This will also determine the intervals used (i.e., 10 mutation checks will create 10 bins beginning with 0.00 and ending at 0.9 every 0.1)
     * mutation_target (str or iterable)
         * Targets for the mutation. Mutation itself determines whether a string or iterable is accepted
-            * change_to_zero: Accepts string or iterable
+            * change_to_zero: Accepts iterable
             * transpose_columns: Accepts iterable, length 2
             * add_categorical_class: Accepts string
             * remove_class: Accepts string
