@@ -2,7 +2,11 @@ from sklearn.linear_model import LogisticRegressionCV
 from sklearn.svm import SVC
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.neural_network import MLPClassifier
-
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.feature_selection import SelectPercentile, chi2
 
 """
 This module provides a function to create machine learning models based on the specified type.
@@ -35,7 +39,32 @@ except ValueError as e:
 """
 
 
-def create_model(model_type="Logistic Regression", model_state=123):
+# Probably should make categorical_cols an optional parameter. Doesn't matter rn, maybe not worth.
+
+
+def create_model(
+    model_type,
+    numeric_cols,
+    categorical_cols,
+    preprocess=True,
+    model_state=123,
+):
+    """Loads configuration data from a JSON file.
+
+    Args:
+        model_type (str): Model type to train.
+        numeric_cols (list): Column names of numeric input data.
+        categorical_cols (list): Column names of categorical input data.
+        preprocess (bool): Declare if data preprocessing should be applied. Defaults to True.
+        model_state (int): Random seed for model training.
+
+    Returns:
+        sklearn.pipeline.Pipeline: The configuration dictionary parsed from the JSON file.
+
+    Raises:
+        ValueError: If the specified model string is not valid.
+
+    """
 
     model_options = {
         "Logistic Regression": {
@@ -91,6 +120,33 @@ def create_model(model_type="Logistic Regression", model_state=123):
     if model_type not in model_options:
         raise ValueError(f"Invalid model_type: {model_type}")
 
-    clf = model_options[model_type]["model"](**model_options[model_type]["args"])
+    # If preprocess is True let's make a pipeline, else let's just declare the model
+
+    model = model_options[model_type]["model"](**model_options[model_type]["args"])
+    if preprocess:
+        numeric_transformer = Pipeline(
+            steps=[
+                ("impute", SimpleImputer(strategy="median")),
+                ("scale", StandardScaler()),
+            ]
+        )
+
+        categorical_transformer = Pipeline(
+            steps=[
+                ("encode", OneHotEncoder(handle_unknown="ignore")),
+                ("select", SelectPercentile(chi2, percentile=50)),
+            ]
+        )
+
+        preprocessor = ColumnTransformer(
+            transformers=[
+                ("num", numeric_transformer, numeric_cols),
+                ("cat", categorical_transformer, categorical_cols),
+            ]
+        )
+
+        clf = Pipeline(steps=[("preprocessor", preprocessor), ("classifier", model)])
+    else:
+        clf = Pipeline(steps=[("classifier", model)])
 
     return clf

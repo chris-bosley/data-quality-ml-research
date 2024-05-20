@@ -1,10 +1,10 @@
 {
     "data_location": "../data/online_shoppers_intention.csv",
     "model": "Logistic Regression",
-    "mutator": "add_noise",
+    "mutator": "change_to_zero",
     "num_mutation_checks": 10,
-    "mutation_target": "ExitRates",
-    "num_scoring_groups": 5,
+    "mutation_target": ["BounceRates", "ExitRates", "Administrative", "Administrative_Duration", "ProductRelated"],
+    "num_scoring_groups": 7,
     "seeds": {
         "outer_seed": 123,
         "inner_seed": 456
