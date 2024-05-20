@@ -127,6 +127,7 @@ def create_model(
         numeric_transformer = Pipeline(
             steps=[
                 ("impute", SimpleImputer(strategy="median")),
+                # Might want a different scaler here
                 ("scale", StandardScaler()),
             ]
         )
