@@ -67,23 +67,32 @@ def main():
     output_file = "results.csv"
     output_config = "config.json"
 
-    # Declare required classifiers
-    clf = create_model(model_type=config["model"])
-
     # Ingest dataset passed from command line
     data = data_tools.read_data(config["data_location"])
 
-    # We'll also have to handle data more carefully than this... this is a bit lazy
-    data.drop(["Month", "VisitorType", "Weekend"], axis=1, inplace=True)
+    # Specific handling ONLY FOR ONLINE SHOPPERS
+    categorical_cols = ["Month", "VisitorType", "TrafficType", "Weekend", "Region"]
+    drop_cols = ["OperatingSystems", "Browser", "index"]
+    target_col = "Revenue"
+    numeric_cols = [
+        i for i in data.columns if i not in categorical_cols + drop_cols + [target_col]
+    ]
+    feature_cols = categorical_cols + numeric_cols
 
-    # identify features and targets. We'll have to specify or assume last or something here
-    feature_cols = data.columns[:-1]
-    target_col = data.columns[-1]
+    # Declare required classifiers
+    clf = create_model(
+        model_type=config["model"],
+        numeric_cols=numeric_cols,
+        categorical_cols=categorical_cols,
+        preprocess=True,
+        model_state=123,
+    )
 
     # Split data
     # Build Scoring Groups
     # Determine the size each scoring group by evenly splitting non-training data
     scoring_group_size = (1 - config["training_percent"]) / config["num_scoring_groups"]
+    # This is a little unclear -- what I'm doing is making the scoring proportions array early then padding.
     scoring_proportions = [config["training_percent"]]
     # Build splits
     for i in range(config["num_scoring_groups"]):
@@ -94,11 +103,13 @@ def main():
         data, proportions=scoring_proportions, seed=config["seeds"]["inner_seed"]
     )
 
+    training_data = data_splits[0]
+    data_splits.pop(0)
+
     # Fit declared model
-    clf.fit(data_splits[0][feature_cols], data_splits[0][target_col])
+    clf.fit(training_data[feature_cols], training_data[target_col])
 
     # Discard training data for ease of handling mutations
-    data_splits.pop(0)
 
     # print(confusion_matrix(test[target_col], clf_list[0][0].predict(test[feature_cols])))
 
