@@ -147,6 +147,10 @@ def get_mutation_metrics(datasets, target_col, feature_cols, clf):
     """
     # Declare metrics to be calculated
     # Each metric is defined with three required elements - name, function & arguments.
+
+    # Temporary cost weighting matrix - this could be moved into a config later if we want.
+    cost_weights = {"tp": 10, "tn": 0, "fp": -3, "fn": -8}
+
     classification_metrics = [
         {
             "name": "precision",
@@ -157,6 +161,21 @@ def get_mutation_metrics(datasets, target_col, feature_cols, clf):
         {"name": "accuracy", "function": accuracy_score, "args": {}},
         {"name": "f1", "function": f1_score, "args": {"zero_division": np.nan}},
         {"name": "balanced-accuracy", "function": balanced_accuracy_score, "args": {}},
+        {
+            "name": "positive-retrieval",
+            "function": retrieval_percent,
+            "args": {"signal_type": "pos"},
+        },
+        {
+            "name": "negative-retrieval",
+            "function": retrieval_percent,
+            "args": {"signal_type": "neg"},
+        },
+        {
+            "name": "cost-penalty",
+            "function": cost_penalty,
+            "args": {"weight_dict": cost_weights},
+        },
     ]
 
     # Create results object
@@ -375,3 +394,70 @@ def pick_up_run_data(run_path: str) -> pd.DataFrame:
     except FileNotFoundError as e:
         print(f"Error: Data files not found in run path: {run_path}")
         raise e  # Re-raise the exception for further handling
+
+
+def retrieval_percent(y_true, y_pred, signal_type):
+    """
+    Calculates the proportion of retrieved positives (or negatives)
+
+    Args:
+        y_true: iterable of true labels (1 or 0)
+        y_pred: iterable of predicted labels
+        signal_type: 'pos' for positive class or 'neg' for negative class
+
+    Returns:
+        float: proportion of retrieved positives (or negatives)
+    """
+
+    if signal_type not in ["pos", "neg"]:
+        raise ValueError("Type must be 'pos' or 'neg'")
+
+    y_true = np.asarray(y_true)
+    y_pred = np.asarray(y_pred)
+
+    if len(y_true) != len(y_pred):
+        raise ValueError("y_true and y_pred must have the same length")
+
+    if signal_type == "pos":
+        # True positives divided by total actual positives
+        return np.sum(y_true & y_pred) / np.sum(y_true)
+    else:
+        # True negatives divided by total actual negatives
+        return np.sum(~y_true & ~y_pred) / np.sum(~y_true)
+
+
+def cost_penalty(y_true, y_pred, weight_dict):
+    """
+    Calculates a custom metric based on true labels, predicted labels and a weight dictionary
+
+    Args:
+        y_true: iterable of true labels (1 or 0)
+        y_pred: iterable of predicted labels
+        weight_dict: dictionary with keys 'tp', 'tn', 'fp', 'fn' for weights
+
+    Returns:
+        float: custom metric score
+    """
+    required_keys = ["tp", "tn", "fp", "fn"]
+    if not all(key in weight_dict for key in required_keys):
+        raise ValueError(f"weight_dict must contain keys: {', '.join(required_keys)}")
+
+    y_true = np.asarray(y_true)
+    y_pred = np.asarray(y_pred)
+
+    if len(y_true) != len(y_pred):
+        raise ValueError("y_true and y_pred must have the same length")
+
+    # True positive, true negative, false positive, false negative
+    tp = np.sum(y_true & y_pred)
+    tn = np.sum(~y_true & ~y_pred)
+    fp = np.sum(y_pred & ~y_true)
+    fn = np.sum(~y_pred & y_true)
+
+    # Calculate score using weights
+    return (
+        tp * weight_dict["tp"]
+        + tn * weight_dict["tn"]
+        + fp * weight_dict["fp"]
+        + fn * weight_dict["fn"]
+    )
