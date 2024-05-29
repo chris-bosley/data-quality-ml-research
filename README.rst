@@ -37,7 +37,7 @@ Runs are to be configured with a json file specified when calling the package fr
     * training_percent (float)
         * Must be in (0,1)
         * Specifies proportion of dataset used for training
-    * noise_arguments (map<str, int/float/string<) (only required for add_noise)
+    * noise_arguments (map<str, int/float/string>) (only required for add_noise)
         * This is a mess but it works for now
         * distribution (string)
             * Allowed values: normal, exponential, uniform
@@ -51,6 +51,13 @@ Runs are to be configured with a json file specified when calling the package fr
             * upper bound for uniform noise
         * scale (numeric)
             * scale for exponential noise
+    * penalty_weights (map<str, int/float>)
+        * Specifies weights for a penalty matrix based metric
+        * Requires the following keys:
+            * tp: True positive penalty
+            * tn: True negative penalty
+            * fp: False positive penalty
+            * fn: False negative penalty
 
 Example Configuration
 ---------------------
@@ -76,7 +83,8 @@ This is an example of a valid configuration file::
             "low": 0,
             "high": 100,
             "scale":2
-            }
+            },
+            "penalty_weights": {"tp": 10, "tn": 0, "fp": -3, "fn": -8}
     }
 
 Features

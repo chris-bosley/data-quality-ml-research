@@ -1,6 +1,6 @@
 {
     "data_location": "../data/online_shoppers_intention.csv",
-    "model": "Logistic Regression",
+    "model": "Random Forest",
     "mutator": "change_to_zero",
     "num_mutation_checks": 10,
     "mutation_target": ["BounceRates", "ExitRates", "Administrative", "Administrative_Duration", "ProductRelated"],
@@ -10,5 +10,6 @@
         "inner_seed": 456
     },
     "training_percent": 0.5,
-    "noise_arguments": {"distribution": "exponential", "mean": 0, "std": 1, "low": 0, "high": 100, "scale":2}
+    "noise_arguments": {"distribution": "exponential", "mean": 0, "std": 1, "low": 0, "high": 100, "scale":2},
+    "penalty_weights": {"tp": 10, "tn": 0, "fp": -3, "fn": -8}
 }
