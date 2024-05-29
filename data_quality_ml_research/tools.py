@@ -127,7 +127,7 @@ def get_random_subsets_from_file(
     return subsets
 
 
-def get_mutation_metrics(datasets, target_col, feature_cols, clf):
+def get_mutation_metrics(datasets, target_col, feature_cols, clf, cost_weights=None):
     """
     Calculates a set of classification metrics for each dataset in a list.
 
@@ -140,6 +140,8 @@ def get_mutation_metrics(datasets, target_col, feature_cols, clf):
         target_col (str): The name of the column containing the target variable in the DataFrames.
         feature_cols (list): A list of strings representing the names of the feature columns in the DataFrames.
         clf (sklearn.classifier): A trained sklearn classifier object.
+        cost_weights (dict): A dict containing the values used for weighting the penalty matrix.
+            Must include the keys "tp", "fp", "tn", "fn". Weights must be numeric.
 
     Returns:
         dict: A dictionary where keys are classification metric names (strings) and values are lists containing
@@ -148,8 +150,9 @@ def get_mutation_metrics(datasets, target_col, feature_cols, clf):
     # Declare metrics to be calculated
     # Each metric is defined with three required elements - name, function & arguments.
 
-    # Temporary cost weighting matrix - this could be moved into a config later if we want.
-    cost_weights = {"tp": 10, "tn": 0, "fp": -3, "fn": -8}
+    # Force a default penalty weighting if none is provided
+    if cost_weights is None:
+        cost_weights = {"tp": 10, "tn": 0, "fp": -3, "fn": -8}
 
     classification_metrics = [
         {
