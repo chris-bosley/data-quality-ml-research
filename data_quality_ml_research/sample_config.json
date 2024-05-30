@@ -1,6 +1,6 @@
 {
     "data_location": "../data/online_shoppers_intention.csv",
-    "model": "Random Forest",
+    "model": ["Random Forest","Poly SVC"],
     "mutator": "change_to_zero",
     "num_mutation_checks": 10,
     "mutation_target": ["BounceRates", "ExitRates", "Administrative", "Administrative_Duration", "ProductRelated"],
