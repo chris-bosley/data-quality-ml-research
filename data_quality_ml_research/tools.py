@@ -380,7 +380,7 @@ def pick_up_run_data(run_path: str) -> pd.DataFrame:
 
         # Process metrics column
         # This is janky. Need to define metrics for this AND the metrics calculator outside functions
-        for met in ["precision", "recall", "accuracy", "f1", "balanced-accuracy","positive-retrieval", "negative-retrieval"]:
+        for met in ["precision", "recall", "accuracy", "f1", "balanced-accuracy","positive-retrieval", "negative-retrieval", "cost-penalty"]:
             # Extract metric values
             df[met] = df["metrics"].apply(lambda x: np.array(ast.literal_eval(x)[met]))
             # Remove NaN
