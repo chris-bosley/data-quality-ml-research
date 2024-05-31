@@ -284,7 +284,13 @@ def get_mutations(data, severity, config):
 
 
 def collect_mutation_results(
-    data_to_mutate, config, target_col, feature_cols, model_name, clf, num_experiments=100
+    data_to_mutate,
+    config,
+    target_col,
+    feature_cols,
+    model_name,
+    clf,
+    num_experiments=100,
 ):
     # Does this really need to hold the mutation?? IT's also in the config file...
     """
@@ -319,7 +325,7 @@ def collect_mutation_results(
         mutated_data = get_mutations(data_to_mutate, mutation_severity, config)
         # Calculate results at current severity
         run_results = {
-            "model" : model_name,
+            "model": model_name,
             "mutation": "change_to_zero",
             "severity": mutation_severity,
             "metrics": get_mutation_metrics(
@@ -376,13 +382,25 @@ def pick_up_run_data(run_path: str) -> pd.DataFrame:
 
         # Load model name from config
         config = load_config(f"{run_path}/config.json")
-        df["model"] = config["model"]
 
         # Process metrics column
         # This is janky. Need to define metrics for this AND the metrics calculator outside functions
-        for met in ["precision", "recall", "accuracy", "f1", "balanced-accuracy","positive-retrieval", "negative-retrieval", "cost-penalty"]:
+        for met in [
+            "precision",
+            "recall",
+            "accuracy",
+            "f1",
+            "balanced-accuracy",
+            "positive-retrieval",
+            "negative-retrieval",
+            "cost-penalty",
+        ]:
             # Extract metric values
-            df[met] = df["metrics"].apply(lambda x: np.array(ast.literal_eval(x)[met]))
+            # Hackily removing nan's here - I'm not sure why this became an issue and should track down a better way to ship these
+            # In metrics calculator we should just drop on the floor for ifnan.
+            df[met] = df["metrics"].apply(
+                lambda x: np.array(ast.literal_eval(x.replace(", nan", ""))[met])
+            )
             # Remove NaN
             df[met] = df[met].apply(lambda x: x[~np.isnan(x)])
             # Calculate mean, standard deviation, and median of each metric
