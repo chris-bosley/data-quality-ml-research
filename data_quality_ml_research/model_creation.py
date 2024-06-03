@@ -49,8 +49,7 @@ def create_model(
     preprocess=True,
     model_state=123,
 ):
-    """Loads configuration data from a JSON file.
-
+    """
     Args:
         model_type (str): Model type to train.
         numeric_cols (list): Column names of numeric input data.
@@ -86,6 +85,8 @@ def create_model(
                 "kernel": "linear",
                 "class_weight": "balanced",
                 "probability": False,
+                "C": 0.5,
+                "gamma": "scale",
                 "random_state": model_state,
             },
         },
@@ -95,23 +96,30 @@ def create_model(
                 "kernel": "rbf",
                 "class_weight": "balanced",
                 "probability": False,
+                "C": 0.7,
+                "gamma": "auto",
                 "random_state": model_state,
             },
         },
         "Random Forest": {
             "model": RandomForestClassifier,
             "args": {
-                "n_estimators": 100,
-                "criterion": "gini",
+                "n_estimators": 200,
                 "class_weight": "balanced",
+                "ccp_alpha": 0.08,
+                "criterion": "log_loss",
+                "max_features": None,
+                "min_samples_split": 2,
                 "random_state": model_state,
             },
         },
         "Neural Network": {
             "model": MLPClassifier,
             "args": {
-                "hidden_layer_sizes": [27, 7, 10],  # Umm.... we can do better here haha
-                "activation": "relu",
+                "hidden_layer_sizes": (2, 1, 1, 1, 2),
+                "activation": "logistic",
+                "alpha": 1 * (10**-5),
+                "max_iter": 3000,
                 "random_state": model_state,
             },
         },
