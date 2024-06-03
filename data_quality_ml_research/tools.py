@@ -11,7 +11,7 @@ from sklearn.metrics import (
     f1_score,
     balanced_accuracy_score,
 )
-
+import warnings
 from mutation import Mutator
 
 
@@ -199,7 +199,7 @@ def get_mutation_metrics(datasets, target_col, feature_cols, clf, cost_weights=N
     return mutation_results
 
 
-def get_mutations(data, severity, config):
+def get_mutations(data, severity, mutation_name, config):
     """
     Applies a data mutation to each DataFrame in a list with a specified severity level.
 
@@ -230,47 +230,57 @@ def get_mutations(data, severity, config):
     # Declare mutator
     mutator = Mutator()
 
-    if config["mutator"] not in valid_mutators:
+    if mutation_name not in valid_mutators:
         raise ValueError(
-            f"Error: {config['mutator']} invalid. Must be one of {valid_mutators}"
+            f"Error: {mutation_name} invalid. Must be one of {valid_mutators}"
         )
     mutated_data = []
     for i in data:
-        if config["mutator"] == "change_to_zero":
+        if mutation_name == "change_to_zero":
             mutator_method = mutator.change_to_zero
             mutator_args = {
                 "df": i,
-                "columns": config["mutation_target"],
+                "columns": config["mutator"][mutation_name],
                 "percentage": severity,
                 "seed": config["seeds"]["outer_seed"],
                 "seed_modifier": config["seeds"]["inner_seed"],
             }
-        elif config["mutator"] == "transpose_columns":
+        elif mutation_name == "transpose_columns":
+            if len(config["mutator"][mutation_name]) != 2:
+                raise ValueError(f"{mutation_name} must have 2 columns")
             mutator_method = mutator.transpose_columns
             mutator_args = {
                 "df": i,
-                "col1": config["mutation_target"][0],
-                "col2": config["mutation_target"][1],
+                "col1": config["mutator"][mutation_name][0],
+                "col2": config["mutator"][mutation_name][1],
             }
-        elif config["mutator"] == "add_categorical_class":
+        # If the config has a list of columns we have to tweak this
+        elif mutation_name == "add_categorical_class":
+            if len(config["mutator"][mutation_name]) != 1:
+                raise ValueError(f"{mutation_name} must have 1 column")
             mutator_method = mutator.add_categorical_class
             mutator_args = {
                 "df": i,
-                "column_name": config["mutation_target"],
+                "column_name": config["mutator"][mutation_name][0],
                 "percentage": severity,
                 "seed": config["seeds"]["outer_seed"],
             }
-        elif config["mutator"] == "remove_class":
+        # If the config has a list of columns we have to tweak this
+        elif mutation_name == "remove_class":
+            if len(config["mutator"][mutation_name]) != 1:
+                raise ValueError(f"{mutation_name} must have 1 column")
             mutator_method = mutator.remove_class
             mutator_args = {
                 "df": i,
-                "column_name": config["mutation_target"],
+                "column_name": config["mutator"][mutation_name][0],
                 "class_seed": config["seeds"]["outer_seed"],
                 "mutator_seed": config["seeds"]["inner_seed"],
             }
-        elif config["mutator"] == "add_noise":
+        elif mutation_name == "add_noise":
+            if len(config["mutator"][mutation_name]) != 1:
+                raise ValueError(f"{mutation_name} must have 1 column")
             mutator_method = mutator.add_noise
-            mutator_args = {"df": i, "column_name": config["mutation_target"]}
+            mutator_args = {"df": i, "column_name": config["mutator"][mutation_name][0]}
             mutator_args.update(config["noise_arguments"])
         else:
             raise ValueError(
@@ -278,6 +288,7 @@ def get_mutations(data, severity, config):
             )
 
         # induce mutation on each dataset
+
         mutated = mutator_method(**mutator_args)
         mutated_data.append(mutated)
     return mutated_data
@@ -289,6 +300,7 @@ def collect_mutation_results(
     target_col,
     feature_cols,
     model_name,
+    mutation_name,
     clf,
     num_experiments=100,
 ):
@@ -322,11 +334,11 @@ def collect_mutation_results(
         # Round here because np float stuff
         mutation_severity = round(mutation_severity, 2)
         # Mutate the data
-        mutated_data = get_mutations(data_to_mutate, mutation_severity, config)
+        mutated_data = get_mutations(data_to_mutate, mutation_severity, mutation_name, config)
         # Calculate results at current severity
         run_results = {
             "model": model_name,
-            "mutation": "change_to_zero",
+            "mutation": mutation_name,
             "severity": mutation_severity,
             "metrics": get_mutation_metrics(
                 mutated_data, target_col, feature_cols, clf

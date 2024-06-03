@@ -82,54 +82,57 @@ def main():
     ]
     feature_cols = categorical_cols + numeric_cols
     mutation_results = []
-    for model_name in config["model"]:
-        # Declare required classifiers
-        clf = create_model(
-            model_type=model_name,
-            numeric_cols=numeric_cols,
-            categorical_cols=categorical_cols,
-            preprocess=True,
-            model_state=123,
-        )
+    # Loop over mutations first then models
+    for mutation_name in config["mutator"]:
+        for model_name in config["model"]:
+            # Declare required classifiers
+            clf = create_model(
+                model_type=model_name,
+                numeric_cols=numeric_cols,
+                categorical_cols=categorical_cols,
+                preprocess=True,
+                model_state=123,
+            )
 
-        # Split data
-        # Build Scoring Groups
-        # Determine the size each scoring group by evenly splitting non-training data
-        scoring_group_size = (1 - config["training_percent"]) / config["num_scoring_groups"]
-        # This is a little unclear -- what I'm doing is making the scoring proportions array early then padding.
-        scoring_proportions = [config["training_percent"]]
-        # Build splits
-        for i in range(config["num_scoring_groups"]):
-            scoring_proportions.append(scoring_group_size)
+            # Split data
+            # Build Scoring Groups
+            # Determine the size each scoring group by evenly splitting non-training data
+            scoring_group_size = (1 - config["training_percent"]) / config["num_scoring_groups"]
+            # This is a little unclear -- what I'm doing is making the scoring proportions array early then padding.
+            scoring_proportions = [config["training_percent"]]
+            # Build splits
+            for i in range(config["num_scoring_groups"]):
+                scoring_proportions.append(scoring_group_size)
 
-        # Split data into training and specified number of non-training datasets
-        data_splits = data_tools.random_nonintersecting_subsets(
-            data, proportions=scoring_proportions, seed=config["seeds"]["inner_seed"]
-        )
+            # Split data into training and specified number of non-training datasets
+            data_splits = data_tools.random_nonintersecting_subsets(
+                data, proportions=scoring_proportions, seed=config["seeds"]["inner_seed"]
+            )
 
-        training_data = data_splits[0]
-        data_splits.pop(0)
+            training_data = data_splits[0]
+            data_splits.pop(0)
 
-        # Fit declared model
-        clf.fit(training_data[feature_cols], training_data[target_col])
+            # Fit declared model
+            clf.fit(training_data[feature_cols], training_data[target_col])
 
-        # Discard training data for ease of handling mutations
+            # Discard training data for ease of handling mutations
 
-        # print(confusion_matrix(test[target_col], clf_list[0][0].predict(test[feature_cols])))
+            # print(confusion_matrix(test[target_col], clf_list[0][0].predict(test[feature_cols])))
 
-        # Mutate all datasets for the given model
-        # Apply a specified mutation and examine model performance under various severities of data failure.
-        model_mutation_results = data_tools.collect_mutation_results(
-            data_splits,
-            config,
-            target_col,
-            feature_cols,
-            model_name,
-            clf,
-            num_experiments=config["num_mutation_checks"],
-        )
-        # Append the mutation results from the model and end the for loop
-        mutation_results.append(model_mutation_results)
+            # Mutate all datasets for the given model
+            # Apply a specified mutation and examine model performance under various severities of data failure.
+            model_mutation_results = data_tools.collect_mutation_results(
+                data_splits,
+                config,
+                target_col,
+                feature_cols,
+                model_name,
+                mutation_name,
+                clf,
+                num_experiments=config["num_mutation_checks"],
+            )
+            # Append the mutation results from the model and end the for loop
+            mutation_results.append(model_mutation_results)
 
     mutation_results = list(chain.from_iterable(mutation_results))
     # Write results and config to disk

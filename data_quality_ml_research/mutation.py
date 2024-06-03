@@ -176,7 +176,6 @@ class Mutator:
             ValueError: If the column does not exist in the DataFrame,
                         or if the percentage is not between 0 and 1.
         """
-
         df_internal = df.copy(deep=True)
         # Check if the column exists
         if column_name not in df_internal.columns:
