@@ -107,3 +107,4 @@ ENV/
 /output_data/
 /notebooks/
 /data_quality_ml_research/test_config.json
+/project_scratch/CVExample.py
