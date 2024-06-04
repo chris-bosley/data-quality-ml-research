@@ -105,6 +105,10 @@ def main():
             le = LabelEncoder()
             le.fit(data[col])
             data[col] = le.transform(data[col])
+    else:
+        raise ValueError(
+            "Please select either shoppers or bank file - general files not supported"
+        )
 
     mutation_results = []
     # Loop over mutations first then models
