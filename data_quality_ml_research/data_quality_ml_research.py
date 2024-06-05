@@ -20,11 +20,13 @@ import sys
 import time
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 import tools as data_tools
 from model_creation import create_model
 from itertools import chain
+from sklearn.preprocessing import LabelEncoder
 
 
 def main():
@@ -44,7 +46,6 @@ def main():
 
         config_file = "./sample_config.json"
         print("WARNING: sample configuration used")
-
 
     config = data_tools.load_config(config_file)
     """
@@ -71,16 +72,44 @@ def main():
     output_config = "config.json"
 
     # Ingest dataset passed from command line
-    data = data_tools.read_data(config["data_location"])
+    if "shoppers" in config["data_location"]:
+        data = data_tools.read_data(config["data_location"])
+        categorical_cols = ["Month", "VisitorType", "TrafficType", "Weekend", "Region"]
+        drop_cols = ["OperatingSystems", "Browser", "index"]
+        target_col = "Revenue"
+        numeric_cols = [
+            i
+            for i in data.columns
+            if i not in categorical_cols + drop_cols + [target_col]
+        ]
+        feature_cols = categorical_cols + numeric_cols
 
-    # Specific handling ONLY FOR ONLINE SHOPPERS
-    categorical_cols = ["Month", "VisitorType", "TrafficType", "Weekend", "Region"]
-    drop_cols = ["OperatingSystems", "Browser", "index"]
-    target_col = "Revenue"
-    numeric_cols = [
-        i for i in data.columns if i not in categorical_cols + drop_cols + [target_col]
-    ]
-    feature_cols = categorical_cols + numeric_cols
+    elif "bank-additional" in config["data_location"]:
+        data = data_tools.read_data(config["data_location"], separator=";")
+        data = data.replace("unknown", np.NaN)
+        categorical_cols = ["job", "marital", "education", "default", "housing", "loan"]
+        numeric_cols = [
+            "age",
+            "emp.var.rate",
+            "cons.price.idx",
+            "cons.conf.idx",
+            "euribor3m",
+            "nr.employed",
+        ]
+        feature_cols = categorical_cols + numeric_cols
+        target_col = "y"
+        # Downcasting violation, but not critical
+        data[target_col] = data[target_col].replace({"no": 0, "yes": 1})
+        # Recoding all categoricals to numeric labels -- lazy, lazy, lazy
+        for col in categorical_cols:
+            le = LabelEncoder()
+            le.fit(data[col])
+            data[col] = le.transform(data[col])
+    else:
+        raise ValueError(
+            "Please select either shoppers or bank file - general files not supported"
+        )
+
     mutation_results = []
     # Loop over mutations first then models
     for mutation_name in config["mutator"]:
@@ -97,7 +126,9 @@ def main():
             # Split data
             # Build Scoring Groups
             # Determine the size each scoring group by evenly splitting non-training data
-            scoring_group_size = (1 - config["training_percent"]) / config["num_scoring_groups"]
+            scoring_group_size = (1 - config["training_percent"]) / config[
+                "num_scoring_groups"
+            ]
             # This is a little unclear -- what I'm doing is making the scoring proportions array early then padding.
             scoring_proportions = [config["training_percent"]]
             # Build splits
@@ -106,7 +137,9 @@ def main():
 
             # Split data into training and specified number of non-training datasets
             data_splits = data_tools.random_nonintersecting_subsets(
-                data, proportions=scoring_proportions, seed=config["seeds"]["inner_seed"]
+                data,
+                proportions=scoring_proportions,
+                seed=config["seeds"]["inner_seed"],
             )
 
             training_data = data_splits[0]
