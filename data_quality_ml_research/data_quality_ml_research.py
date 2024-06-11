@@ -24,6 +24,7 @@ import numpy as np
 import pandas as pd
 
 import tools as data_tools
+import plot_output as plottool
 from model_creation import create_model
 from itertools import chain
 from sklearn.preprocessing import LabelEncoder
@@ -172,6 +173,19 @@ def main():
     pd.DataFrame(mutation_results).to_csv(output_dir / output_file, index=False)
     with open(output_dir / output_config, "w") as f:
         json.dump(config, f)
+    for nml in [True, False]:
+        plottool.make_metric_plots(
+            [
+                "precision",
+                "recall",
+                "f1",
+                "accuracy",
+                "balanced-accuracy",
+                "negative-retrieval",
+            ],
+            output_dir,
+            nml,
+        )
 
 
 if __name__ == "__main__":
