@@ -200,7 +200,7 @@ class Mutator:
         # Create a new class label with a prefix (avoiding potential conflicts)
         if pd.api.types.is_numeric_dtype(df_internal[column_name]):
             existing_values = df_internal[column_name].unique()
-            new_class_label = max(existing_values) + 11
+            new_class_label = max(existing_values) + 1
         else:
             new_class_label = prefix + str(
                 np.random.randint(100000)
