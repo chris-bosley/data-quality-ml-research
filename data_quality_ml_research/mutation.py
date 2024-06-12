@@ -139,25 +139,50 @@ class Mutator:
 
         return df_internal  # Return the mutated DataFrame
 
-    def transpose_columns(self, df, col1, col2):
+    def transpose_columns(self, df, col1, col2, percentage, seed=None, seed_modifier=None):
         """Transposes two columns in the dataset to simulate a key transposition.
 
         Args:
             df (pandas.DataFrame): The DataFrame to mutate.
             col1: First column to transpose.
             col2: Second column to transpose.
+            percentage (float, optional): The percentage of values to change to 0 in each column.
+            seed (int, optional): The random seed for randomizing the DataFrame. If None, a random seed will be
+                generated. Defaults to None.
+            seed_modifier (int, optional): The random seed for randomizing each column during mutation.
+                If None, a random seed will be generated. Defaults to None.
 
         Raises:
+            ValueError: If the percentage is not between 0 and 1.
             TypeError: If either column does not exist in the DataFrame.
         """
         df_internal = df.copy(deep=True)
         # Check that both columns exist
+        if percentage < 0 or percentage > 1:
+            raise ValueError("Percentage must be between 0 and 1.")
+
         for col in [col1, col2]:
             if col not in df_internal.columns:
                 raise TypeError(f"Column {col} must exist in DataFrame.")
 
-        # Transpose columns
-        df_internal[col1], df_internal[col2] = df_internal[col2], df_internal[col1]
+        # Generate a random seed if none is provided
+        if seed is None:
+            seed = np.random.randint(100000)
+
+        if seed_modifier is None:
+            seed_modifier = np.random.randint(100000)
+
+        inner_seed = seed * seed_modifier + (hash(col1) % 100000)
+
+        # Randomly select indices to modify
+        num_values_to_change = int(percentage * len(df_internal))
+        random_indices = df_internal.sample(
+            num_values_to_change, random_state=inner_seed
+        ).index
+
+
+        # Transpose columns NOTE: this gives a warning because of potential type mismatches
+        df_internal.loc[random_indices, [col1, col2]] = df_internal.loc[random_indices, [col2, col1]].values
 
         return df_internal
 
@@ -217,7 +242,7 @@ class Mutator:
 
         return df_internal
 
-    def remove_class(self, df, column_name, class_seed=None, mutator_seed=None):
+    def remove_class(self, df, column_name, percentage=0.0, class_seed=None, mutator_seed=None):
         """
         Modifies a specified column in a DataFrame, randomly selecting a class to remove and redistributing
             members to other classes in a seeded fashion.
@@ -225,6 +250,7 @@ class Mutator:
         Args:
             df (pandas.DataFrame): The DataFrame to modify.
             column_name (str): The name of the column to modify.
+            percentage (float, optional): The percentage of classes to remove
             class_seed (int, optional): The random seed for selecting the class to remove. Defaults to None.
             mutator_seed (int, optional): The random seed for redistributing members. Defaults to None.
 
@@ -234,6 +260,9 @@ class Mutator:
         """
 
         df_internal = df.copy(deep=True)
+
+        if percentage < 0 or percentage > 1:
+            raise ValueError("Percentage must be between 0 and 1.")
         # Check if the column exists
         if column_name not in df_internal.columns:
             raise ValueError(f"Column '{column_name}' does not exist in the DataFrame.")
@@ -249,16 +278,19 @@ class Mutator:
         # Get all classes
         all_classes = df_internal[column_name].unique()
 
-        # Randomly select a class to remove using the selection seed
-        class_to_remove = random.choice(all_classes)
+        # Calculate the number of classes to remove, making sure to leave at least 1 class
+        num_classes_to_remove = min(int(percentage * len(all_classes)), len(all_classes) - 1)
 
-        # Get all classes (excluding the one to remove)
-        remaining_classes = all_classes[all_classes != class_to_remove]
+        indices_to_change = []
+        for num in range(0, num_classes_to_remove+1):
+            # Randomly select a class to remove using the selection seed
+            class_to_remove = random.choice(all_classes)
 
-        # Get indices of entries with the class to remove
-        indices_to_change = df_internal[
-            df_internal[column_name] == class_to_remove
-        ].index
+            # Get all classes (excluding the one to remove)
+            remaining_classes = all_classes[all_classes != class_to_remove]
+
+            # Get indices of entries with the class to remove and append to the list
+            indices_to_change.extend(df_internal[df_internal[column_name] == class_to_remove].index)
 
         # Set seed for member redistribution (if provided)
         if mutator_seed is not None:
@@ -282,6 +314,7 @@ class Mutator:
         low=None,
         high=None,
         scale=1,
+        percentage=0.0
     ):
         """
         Adds random noise to a column in a pandas dataframe.
@@ -300,21 +333,22 @@ class Mutator:
                 Used for uniform distribution only.
             scale: The scale parameter of the exponential distribution (default: 1).
                 Controls the spread of the distribution.
+            percentage: Intensity of the noise, ranging from 0 to 1 (default: 0.0).
 
         Returns:
             A new pandas dataframe with the noise added to the specified column.
         """
         df_internal = df.copy(deep=True)
         if distribution == "normal":
-            noise = np.random.normal(loc=mean, scale=std, size=len(df))
+            noise = np.random.normal(loc=mean, scale=std * percentage, size=len(df))
         elif distribution == "uniform":
             if low is None or high is None:
                 raise ValueError(
                     "low and high must be specified for uniform distribution"
                 )
-            noise = np.random.uniform(low=low, high=high, size=len(df))
+            noise = np.random.uniform(low=low, high=high, size=len(df)) * percentage
         elif distribution == "exponential":
-            noise = np.random.exponential(scale=scale, size=len(df))
+            noise = np.random.exponential(scale=scale * percentage, size=len(df))
         else:
             raise ValueError("Unsupported noise distribution:", distribution)
 

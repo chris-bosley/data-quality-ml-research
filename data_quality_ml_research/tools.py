@@ -253,6 +253,9 @@ def get_mutations(data, severity, mutation_name, config):
                 "df": i,
                 "col1": config["mutator"][mutation_name][0],
                 "col2": config["mutator"][mutation_name][1],
+                "percentage": severity,
+                "seed": config["seeds"]["outer_seed"],
+                "seed_modifier": config["seeds"]["inner_seed"],
             }
         # If the config has a list of columns we have to tweak this
         elif mutation_name == "add_categorical_class":
@@ -273,6 +276,7 @@ def get_mutations(data, severity, mutation_name, config):
             mutator_args = {
                 "df": i,
                 "column_name": config["mutator"][mutation_name][0],
+                "percentage": severity,
                 "class_seed": config["seeds"]["outer_seed"],
                 "mutator_seed": config["seeds"]["inner_seed"],
             }
@@ -280,8 +284,13 @@ def get_mutations(data, severity, mutation_name, config):
             if len(config["mutator"][mutation_name]) != 1:
                 raise ValueError(f"{mutation_name} must have 1 column")
             mutator_method = mutator.add_noise
-            mutator_args = {"df": i, "column_name": config["mutator"][mutation_name][0]}
+            mutator_args = {
+                "df": i,
+                "column_name": config["mutator"][mutation_name][0],
+                "percentage": severity,
+            }
             mutator_args.update(config["noise_arguments"])
+
         else:
             raise ValueError(
                 f"Error: {config['mutator']} invalid. Must be one of {valid_mutators}"
