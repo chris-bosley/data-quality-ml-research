@@ -72,3 +72,4 @@ def make_metric_plots(metrics_for_plot, run_path, normalize=True):
                 format="png",
                 bbox_inches="tight",
             )
+            plt.close()
