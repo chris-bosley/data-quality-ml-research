@@ -161,15 +161,17 @@ class Mutator:
 
         return df_internal
 
-    def add_categorical_class(self, df, column_name, percentage=0.0, seed=None):
+    def add_categorical_class(
+        self, df, column_name, percentage, prefix="New_", seed=None
+    ):
         """
         Modifies a categorical column in a DataFrame, inferring a new class and randomly changing entries.
 
         Args:
             df (pandas.DataFrame): The DataFrame to modify.
             column_name (str): The name of the column to modify.
-            percentage (float, optional): The percentage of entries to change to the new
-                class (between 0 and 1). Defaults to 0.0.
+            percentage (float): Percentage to mutate
+            prefix (str, optional): The prefix for the new class label. Defaults to "New_".
             seed (int, optional): The random seed for repeatability. Defaults to None.
 
         Raises:
@@ -181,23 +183,28 @@ class Mutator:
         if column_name not in df_internal.columns:
             raise ValueError(f"Column '{column_name}' does not exist in the DataFrame.")
 
-        # Check if the column is numeric
-        if not pd.api.types.is_numeric_dtype(df_internal[column_name]):
-            raise ValueError(f"Column '{column_name}' is not numeric.")
-
-        # Check if the column is of integer type
-        if not pd.api.types.is_integer_dtype(df_internal[column_name]):
-            raise ValueError(f"Column '{column_name}' is not of integer type.")
+        # Check if the column is a string or numeric type
+        if not (
+            pd.api.types.is_numeric_dtype(df_internal[column_name])
+            or pd.api.types.is_string_dtype(df_internal[column_name])
+        ):
+            raise ValueError(f"Column '{column_name}' must be numeric or string type.")
 
         # Set random seed (if provided)
         if seed is not None:
             np.random.seed(seed)
 
-        # Get existing distinct values
-        existing_values = df_internal[column_name].unique()
+        # Get existing categories
+        existing_categories = df_internal[column_name].unique()
 
-        # Infer a new class label (assuming integer increment)
-        new_class_label = max(existing_values) + 1
+        # Create a new class label with a prefix (avoiding potential conflicts)
+        if pd.api.types.is_numeric_dtype(df_internal[column_name]):
+            existing_values = df_internal[column_name].unique()
+            new_class_label = max(existing_values) + 11
+        else:
+            new_class_label = prefix + str(
+                np.random.randint(100000)
+            )  # Generate unique string
 
         # Randomly modify entries to the new class (if applicable)
         if percentage != 0:
