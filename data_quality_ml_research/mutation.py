@@ -17,7 +17,7 @@ Defines a Mutator class with methods for data mutation tasks.
     specified categorical column to a new, unseen category.
 5. `remove_class(self, df, column_name, class_seed=None, mutator_seed=None)`: Randomly selects a class from a
     categorical column and removes it, replacing all members with existing classes.
-5. `add_noise(self, df, column_name, distribution="normal", mean=0, std=0.1, low=None, high=None, scale=1)`:
+5. `add_noise(self, df, column_name, distribution="normal", noise_sd_scale=4, low=None, high=None, scale=1)`:
     Adds normal, uniform or exponential noise to a column.
 
 **Usage:**
@@ -52,10 +52,10 @@ mutator = Mutator()
 mutatedData = mutator.remove_class(data, 'col2', class_seed=314, mutator_seed=1718)
 print(mutatedData)
 
-# Example 6: Add normal(0, 0.1) noise
+# Example 6: Add normal noise with a maximum obfuscation of 3 standard deviations
 data = pd.DataFrame({'col1': [1, 2, 3, 4], 'col2': [5, 6, 7, 8]})
 mutator = Mutator()
-df_with_normal_noise = add_noise(data, 'col2', distribution="normal", mean=0, std=0.1)
+df_with_normal_noise = add_noise(data, 'col2', distribution="normal", noise_sd_scale = 3)
 
 # Example 7: Add uniform(0,1) noise
 data = pd.DataFrame({'col1': [1, 2, 3, 4], 'col2': [5, 6, 7, 8]})
@@ -139,7 +139,9 @@ class Mutator:
 
         return df_internal  # Return the mutated DataFrame
 
-    def transpose_columns(self, df, col1, col2, percentage, seed=None, seed_modifier=None):
+    def transpose_columns(
+        self, df, col1, col2, percentage, seed=None, seed_modifier=None
+    ):
         """Transposes two columns in the dataset to simulate a key transposition.
 
         Args:
@@ -180,9 +182,10 @@ class Mutator:
             num_values_to_change, random_state=inner_seed
         ).index
 
-
         # Transpose columns NOTE: this gives a warning because of potential type mismatches
-        df_internal.loc[random_indices, [col1, col2]] = df_internal.loc[random_indices, [col2, col1]].values
+        df_internal.loc[random_indices, [col1, col2]] = df_internal.loc[
+            random_indices, [col2, col1]
+        ].values
 
         return df_internal
 
@@ -242,7 +245,9 @@ class Mutator:
 
         return df_internal
 
-    def remove_class(self, df, column_name, percentage=0.0, class_seed=None, mutator_seed=None):
+    def remove_class(
+        self, df, column_name, percentage=0.0, class_seed=None, mutator_seed=None
+    ):
         """
         Modifies a specified column in a DataFrame, randomly selecting a class to remove and redistributing
             members to other classes in a seeded fashion.
@@ -279,10 +284,12 @@ class Mutator:
         all_classes = df_internal[column_name].unique()
 
         # Calculate the number of classes to remove, making sure to leave at least 1 class
-        num_classes_to_remove = min(int(percentage * len(all_classes)), len(all_classes) - 1)
+        num_classes_to_remove = min(
+            int(percentage * len(all_classes)), len(all_classes) - 1
+        )
 
         indices_to_change = []
-        for num in range(0, num_classes_to_remove+1):
+        for num in range(0, num_classes_to_remove + 1):
             # Randomly select a class to remove using the selection seed
             class_to_remove = random.choice(all_classes)
 
@@ -290,7 +297,9 @@ class Mutator:
             remaining_classes = all_classes[all_classes != class_to_remove]
 
             # Get indices of entries with the class to remove and append to the list
-            indices_to_change.extend(df_internal[df_internal[column_name] == class_to_remove].index)
+            indices_to_change.extend(
+                df_internal[df_internal[column_name] == class_to_remove].index
+            )
 
         # Set seed for member redistribution (if provided)
         if mutator_seed is not None:
@@ -309,12 +318,11 @@ class Mutator:
         df,
         column_name,
         distribution="normal",
-        mean=0,
-        std=0.1,
+        noise_sd_scale=4,
         low=None,
         high=None,
         scale=1,
-        percentage=0.0
+        percentage=0.0,
     ):
         """
         Adds random noise to a column in a pandas dataframe.
@@ -324,8 +332,9 @@ class Mutator:
             column_name: Name of the column to add noise to.
             distribution: The type of noise distribution to use (default: "normal").
                 Supported distributions: "normal", "uniform", "exponential".
-            mean: The mean of the noise (default: 0).
-            std: The standard deviation of the noise (default: 0.1).
+            noise_sd_scale (float): The multiplicative factor assigned to standard deviation at "maximum obfuscation".
+                The noise will scale from 0 * column standard deviation to noise_sd_scale * standard deviation
+                as the experiment runs from 0% mutation to 100% mutation. (default: 4)
                 Used for normal distribution only.
             low: The lower bound of the noise distribution (default: None).
                 Used for uniform distribution only.
@@ -340,7 +349,10 @@ class Mutator:
         """
         df_internal = df.copy(deep=True)
         if distribution == "normal":
-            noise = np.random.normal(loc=mean, scale=std * percentage, size=len(df))
+            std = round(df[column_name].std(), 2)
+            noise = np.random.normal(
+                loc=0, scale=std * (noise_sd_scale * percentage), size=len(df)
+            )
         elif distribution == "uniform":
             if low is None or high is None:
                 raise ValueError(
