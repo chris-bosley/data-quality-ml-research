@@ -109,3 +109,4 @@ ENV/
 /data_quality_ml_research/test_config.json
 /project_scratch/CVExample.py
 /configs/online_shoppers_all_models.json
+/big_config_dir/
