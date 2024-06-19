@@ -41,10 +41,8 @@ Runs are to be configured with a json file specified when calling the package fr
         * This is a mess but it works for now
         * distribution (string)
             * Allowed values: normal, exponential, uniform
-        * mean (numeric)
-            * mean for normal distribution noise
-        * std (numeric)
-            *  standard deviation for normal distribution noise
+        * noise_sd_scale (numeric)
+            *  Maximum number of standard deviations to add to white noise
         * low (numeric)
             * lower bound for uniform noise
         * high (numeric)

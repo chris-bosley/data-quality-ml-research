@@ -123,7 +123,7 @@ def create_model(
                 # "activation": "logistic",
                 "activation": "relu",
                 # "alpha": 1 * (10**-5),
-                # "max_iter": 3000,
+                "max_iter": 500,
                 "random_state": model_state,
             },
         },
