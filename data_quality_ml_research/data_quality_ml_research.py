@@ -90,7 +90,6 @@ def main():
         data = data.replace("unknown", np.NaN)
         categorical_cols = ["job", "marital", "education", "default", "housing", "loan"]
         numeric_cols = [
-            "duration",
             "age",
             "emp.var.rate",
             "cons.price.idx",
