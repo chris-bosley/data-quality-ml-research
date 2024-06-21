@@ -10,6 +10,7 @@ from sklearn.metrics import (
     recall_score,
     f1_score,
     balanced_accuracy_score,
+    roc_auc_score,
 )
 import warnings
 from mutation import Mutator
@@ -164,6 +165,7 @@ def get_mutation_metrics(datasets, target_col, feature_cols, clf, cost_weights=N
         {"name": "accuracy", "function": accuracy_score, "args": {}},
         {"name": "f1", "function": f1_score, "args": {"zero_division": np.nan}},
         {"name": "balanced-accuracy", "function": balanced_accuracy_score, "args": {}},
+        {"name": "roc_auc_score", "function": roc_auc_score, "args": {}},
         {
             "name": "positive-retrieval",
             "function": retrieval_percent,
@@ -339,11 +341,15 @@ def collect_mutation_results(
               severity, and a dictionary of classification metrics for the mutated data.
     """
     all_runs = []
-    for mutation_severity in [j * 1 / num_experiments for j in range(num_experiments)]:
+    for mutation_severity in [
+        j * 1 / num_experiments for j in range(num_experiments + 1)
+    ]:
         # Round here because np float stuff
         mutation_severity = round(mutation_severity, 2)
         # Mutate the data
-        mutated_data = get_mutations(data_to_mutate, mutation_severity, mutation_name, config)
+        mutated_data = get_mutations(
+            data_to_mutate, mutation_severity, mutation_name, config
+        )
         # Calculate results at current severity
         run_results = {
             "model": model_name,
@@ -412,6 +418,7 @@ def pick_up_run_data(run_path: str) -> pd.DataFrame:
             "accuracy",
             "f1",
             "balanced-accuracy",
+            "roc_auc_score",
             "positive-retrieval",
             "negative-retrieval",
             "cost-penalty",
@@ -420,7 +427,7 @@ def pick_up_run_data(run_path: str) -> pd.DataFrame:
             # Hackily removing nan's here - I'm not sure why this became an issue and should track down a better way to ship these
             # In metrics calculator we should just drop on the floor for ifnan.
             df[met] = df["metrics"].apply(
-                lambda x: np.array(ast.literal_eval(x.replace(", nan", ""))[met])
+                lambda x: np.array(ast.literal_eval(x.replace("nan", "0."))[met])
             )
             # Remove NaN
             df[met] = df[met].apply(lambda x: x[~np.isnan(x)])

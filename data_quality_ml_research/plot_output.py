@@ -11,6 +11,7 @@ def make_metric_plots(metrics_for_plot, run_path, normalize=True):
         "mean_accuracy": "accuracy",
         "mean_f1": "f1",
         "mean_balanced-accuracy": "balanced-accuracy",
+        "mean_roc_auc_score": "roc_auc_score",
         "mean_positive-retrieval": "positive-retrieval",
         "mean_negative-retrieval": "negative-retrieval",
         "mean_cost-penalty": "cost-penalty",
