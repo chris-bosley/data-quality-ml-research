@@ -182,6 +182,7 @@ def main():
                 "f1",
                 "accuracy",
                 "balanced-accuracy",
+                "roc_auc_score",
                 "negative-retrieval",
             ],
             output_dir,
