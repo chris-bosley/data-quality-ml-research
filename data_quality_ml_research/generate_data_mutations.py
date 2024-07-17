@@ -15,21 +15,34 @@ This script performs the following functions:
 
 """
 
-def main()
-    #Example config for development
-    config = {'file': 'foo.csv',
-              'mutator': 'change_to_zero',
-              'column': 'bar',
-              'pure_size': 35,
-              'num_mutated_sets': 10,
-              'output_path': 'baz/'}
 
-    #pick up file
-    data = data_tools.read_data(config["file"])
+def main():
+    # Example config for development
+    config = {
+        "data_location": "../data/bank-additional-full.csv",
+        "training_percent": 0.35,
+        "num_mutated_sets": 15,
+        "output_path": "baz/",
+        "mutator": {"add_categorical_class": ["job"]},
+        "seeds": {"outer_seed": 123, "inner_seed": 456},
+        "noise_arguments": {
+            "distribution": "normal",
+            "low": 0,
+            "high": 100,
+            "scale": 2,
+        },
+    }
+
+    # Define mutation
+    mutation_name = list(config["mutator"].keys())[0]
+    column_name = list(config["mutator"].values())[0][0]
+
+    # pick up file
+    data = data_tools.read_data(config["data_location"])
 
     # Split data
     # Determine the size each mutated group by evenly splitting non-training data
-    mutate_group_size = (1 - config["pure_size"]) / config["num_mutated_sets"]
+    mutate_group_size = (1 - config["training_percent"]) / config["num_mutated_sets"]
     # Build splits
     scoring_proportions = [config["training_percent"]]
     for i in range(config["num_mutated_sets"]):
@@ -39,8 +52,18 @@ def main()
     data_splits = data_tools.random_nonintersecting_subsets(
         data,
         proportions=scoring_proportions,
-        seed=789,
+        seed=config["seeds"]["inner_seed"],
     )
 
     training_data = data_splits[0]
+    training_data.to_csv(f"somewhere_0_{column_name}.csv")
+
     data_splits.pop(0)
+
+    # Figure out how much to mutate each dataset
+    mutation_severities = [round((j + 1) * 1 / 15, 2) for j in range(15)]
+    for severity in mutation_severities:
+        mutated_data = data_tools.get_mutations(
+            data_splits[0], severity, mutation_name, config
+        )
+        mutated_data.to_csv(f"somewhere_{severity}_{column_name}.csv")
