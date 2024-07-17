@@ -1,25 +1,51 @@
-import tools as data_tools
-import numpy as np
-
 """
 Module for generating mutated datasets
 
-This script performs the following functions:
-1. Picks up a csv
-2. Splits the csv into the specified number of datasets with specified sizes - one for "pure" and n for "mutated"
-3. Mutates the indicated column using the configured method in each of the "mutated" datasets
-4. Writes all files back as csv to the specified directory in the format <filename>_<mutation>_<column>.csv
+This module provides functionalities to split a dataset into a "pure" set
+and multiple "mutated" sets. Each mutated set has the specified column
+altered using a configured method.
 
-** Usage **
+**Features:**
 
-> Do the thing
+* Reads CSV data using the `data_tools` module.
+* Splits data into training and mutated sets with user-defined proportions.
+* Applies mutations to specific columns with adjustable severity.
+* Saves all generated datasets as CSV files.
 
+**Usage:**
+
+This module is intended to be run as a script. Simply execute the script,
+and it will process the data based on the provided configuration.
 """
+
+import tools as data_tools
+import numpy as np
+
+
+def define_mutation(config):
+    """
+    Extracts the mutation method and target column from the configuration.
+
+    Args:
+        config: A dictionary containing configuration parameters.
+
+    Returns:
+        A tuple containing the mutation method name (string) and the target column name (string).
+    """
+    mutation_name = list(config["mutator"].keys())[0]
+    column_name = list(config["mutator"].values())[0][0]
+    return mutation_name, column_name
 
 
 def main():
-    # Example config for development
-    # Need to force-create full path for output
+    """
+    Main function for processing data and generating mutated datasets.
+
+    This function reads the configuration, defines the mutation, splits the data,
+    applies mutations to individual datasets, and saves the results.
+    """
+
+    # Example config for development (modify as needed)
     config = {
         "data_location": "../data/bank-additional-full.csv",
         "training_percent": 0.35,
@@ -35,11 +61,10 @@ def main():
         },
     }
 
-    # Define mutation
-    mutation_name = list(config["mutator"].keys())[0]
-    column_name = list(config["mutator"].values())[0][0]
+    # Define mutation based on config
+    mutation_name, column_name = define_mutation(config)
 
-    # pick up file
+    # Read data using data_tools module (adapt based on data format)
     if "shoppers" in config["data_location"]:
         data = data_tools.read_data(config["data_location"])
 
@@ -47,33 +72,28 @@ def main():
         data = data_tools.read_data(config["data_location"], separator=";")
         data = data.replace("unknown", np.NaN)
 
-    # Split data
-    # Determine the size each mutated group by evenly splitting non-training data
+    # Split data into training and mutated sets
     mutate_group_size = (1 - config["training_percent"]) / config["num_mutated_sets"]
-    # Build splits
-    scoring_proportions = [config["training_percent"]]
-    for i in range(config["num_mutated_sets"]):
-        scoring_proportions.append(mutate_group_size)
+    scoring_proportions = [config["training_percent"]] + [mutate_group_size] * config[
+        "num_mutated_sets"
+    ]
 
-    # Split data into pure set and specified number of non-training datasets
     data_splits = data_tools.random_nonintersecting_subsets(
-        data,
-        proportions=scoring_proportions,
-        seed=config["seeds"]["inner_seed"],
+        data, proportions=scoring_proportions, seed=config["seeds"]["inner_seed"]
     )
 
-    training_data = data_splits[0]
-    training_data.to_csv(f"{config["output_path"]}mutated_0_{column_name}.csv")
+    training_data = data_splits.pop(0)
+    training_data.to_csv(f"{config['output_path']}mutated_0_{column_name}.csv")
 
-    data_splits.pop(0)
-
-    # Figure out how much to mutate each dataset
+    # Apply mutations to individual datasets with varying severity
     mutation_severities = [round((j + 1) * 1 / 15, 2) for j in range(15)]
     for n, severity in enumerate(mutation_severities):
         mutated_data = data_tools.get_mutations(
             [data_splits[n]], severity, mutation_name, config
         )
-        mutated_data[0].to_csv(f"{config["output_path"]}mutated_{int(round(severity*100,0))}_{column_name}.csv")
+        mutated_data[0].to_csv(
+            f"{config['output_path']}mutated_{int(round(severity * 100, 0))}_{column_name}.csv"
+        )
 
 
 if __name__ == "__main__":
