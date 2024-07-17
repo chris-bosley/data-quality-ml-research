@@ -1,4 +1,5 @@
 import tools as data_tools
+import numpy as np
 
 """
 Module for generating mutated datasets
@@ -18,12 +19,13 @@ This script performs the following functions:
 
 def main():
     # Example config for development
+    # Need to force-create full path for output
     config = {
         "data_location": "../data/bank-additional-full.csv",
         "training_percent": 0.35,
         "num_mutated_sets": 15,
-        "output_path": "baz/",
-        "mutator": {"add_categorical_class": ["job"]},
+        "output_path": "../mutated_data/",
+        "mutator": {"change_to_zero": ["euribor3m"]},
         "seeds": {"outer_seed": 123, "inner_seed": 456},
         "noise_arguments": {
             "distribution": "normal",
@@ -38,7 +40,12 @@ def main():
     column_name = list(config["mutator"].values())[0][0]
 
     # pick up file
-    data = data_tools.read_data(config["data_location"])
+    if "shoppers" in config["data_location"]:
+        data = data_tools.read_data(config["data_location"])
+
+    elif "bank-additional" in config["data_location"]:
+        data = data_tools.read_data(config["data_location"], separator=";")
+        data = data.replace("unknown", np.NaN)
 
     # Split data
     # Determine the size each mutated group by evenly splitting non-training data
@@ -56,14 +63,18 @@ def main():
     )
 
     training_data = data_splits[0]
-    training_data.to_csv(f"somewhere_0_{column_name}.csv")
+    training_data.to_csv(f"{config["output_path"]}mutated_0_{column_name}.csv")
 
     data_splits.pop(0)
 
     # Figure out how much to mutate each dataset
     mutation_severities = [round((j + 1) * 1 / 15, 2) for j in range(15)]
-    for severity in mutation_severities:
+    for n, severity in enumerate(mutation_severities):
         mutated_data = data_tools.get_mutations(
-            data_splits[0], severity, mutation_name, config
+            [data_splits[n]], severity, mutation_name, config
         )
-        mutated_data.to_csv(f"somewhere_{severity}_{column_name}.csv")
+        mutated_data[0].to_csv(f"{config["output_path"]}mutated_{int(round(severity*100,0))}_{column_name}.csv")
+
+
+if __name__ == "__main__":
+    main()
