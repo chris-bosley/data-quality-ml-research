@@ -20,6 +20,7 @@ and it will process the data based on the provided configuration.
 
 import tools as data_tools
 import numpy as np
+import sys
 
 
 def define_mutation(config):
@@ -44,8 +45,15 @@ def main():
     This function reads the configuration, defines the mutation, splits the data,
     applies mutations to individual datasets, and saves the results.
     """
+    if len(sys.argv) > 1:
+        config_file = sys.argv[1]
+    else:
+        config_file = "C:/Users/chris/PycharmProjects/data-quality-ml-research/data_quality_ml_research/sample_file_mutation_config.json"
+        print("WARNING: sample configuration used")
 
-    # Example config for development (modify as needed)
+    config = data_tools.load_config(config_file)
+
+    """ Example config for development (modify as needed)
     config = {
         "data_location": "../data/bank-additional-full.csv",
         "training_percent": 0.35,
@@ -60,17 +68,24 @@ def main():
             "scale": 2,
         },
     }
+"""
 
     # Define mutation based on config
     mutation_name, column_name = define_mutation(config)
 
     # Read data using data_tools module (adapt based on data format)
-    if "shoppers" in config["data_location"]:
-        data = data_tools.read_data(config["data_location"])
+    try:
+        if "shoppers" in config["data_location"]:
+            data = data_tools.read_data(config["data_location"])
 
-    elif "bank-additional" in config["data_location"]:
-        data = data_tools.read_data(config["data_location"], separator=";")
-        data = data.replace("unknown", np.NaN)
+        elif "bank-additional" in config["data_location"]:
+            data = data_tools.read_data(config["data_location"], separator=";")
+            data = data.replace("unknown", np.NaN)
+        else:
+            raise ValueError("Unsupported data format based on file location")
+    except Exception as e:
+        print(f"Error reading data: {e}")
+        return
 
     # Split data into training and mutated sets
     mutate_group_size = (1 - config["training_percent"]) / config["num_mutated_sets"]
@@ -88,12 +103,15 @@ def main():
     # Apply mutations to individual datasets with varying severity
     mutation_severities = [round((j + 1) * 1 / 15, 2) for j in range(15)]
     for n, severity in enumerate(mutation_severities):
-        mutated_data = data_tools.get_mutations(
-            [data_splits[n]], severity, mutation_name, config
-        )
-        mutated_data[0].to_csv(
-            f"{config['output_path']}mutated_{int(round(severity * 100, 0))}_{column_name}.csv"
-        )
+        try:
+            mutated_data = data_tools.get_mutations(
+                [data_splits[n]], severity, mutation_name, config
+            )
+            mutated_data[0].to_csv(
+                f"{config['output_path']}mutated_{int(round(severity * 100, 0))}_{column_name}.csv"
+            )
+        except Exception as e:
+            print(f"Error applying mutation to dataset {n}: {e}")
 
 
 if __name__ == "__main__":
