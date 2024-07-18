@@ -18,6 +18,8 @@ This module is intended to be run as a script. Simply execute the script,
 and it will process the data based on the provided configuration.
 """
 
+from pathlib import Path
+
 import tools as data_tools
 import numpy as np
 import sys
@@ -53,22 +55,9 @@ def main():
 
     config = data_tools.load_config(config_file)
 
-    """ Example config for development (modify as needed)
-    config = {
-        "data_location": "../data/bank-additional-full.csv",
-        "training_percent": 0.35,
-        "num_mutated_sets": 15,
-        "output_path": "../mutated_data/",
-        "mutator": {"change_to_zero": ["euribor3m"]},
-        "seeds": {"outer_seed": 123, "inner_seed": 456},
-        "noise_arguments": {
-            "distribution": "normal",
-            "low": 0,
-            "high": 100,
-            "scale": 2,
-        },
-    }
-"""
+    # Ensure output path exists
+    output_dir = Path(f"{config['output_path']}").absolute()
+    output_dir.mkdir(parents=True, exist_ok=True)
 
     # Define mutation based on config
     mutation_name, column_name = define_mutation(config)
@@ -77,10 +66,12 @@ def main():
     try:
         if "shoppers" in config["data_location"]:
             data = data_tools.read_data(config["data_location"])
+            dataset_name = "shoppers"
 
         elif "bank-additional" in config["data_location"]:
             data = data_tools.read_data(config["data_location"], separator=";")
             data = data.replace("unknown", np.NaN)
+            dataset_name = "banking"
         else:
             raise ValueError("Unsupported data format based on file location")
     except Exception as e:
@@ -98,7 +89,9 @@ def main():
     )
 
     training_data = data_splits.pop(0)
-    training_data.to_csv(f"{config['output_path']}mutated_0_{column_name}.csv")
+    training_data.to_csv(
+        f"{config['output_path']}/{dataset_name}_mutated_0_{column_name}.csv"
+    )
 
     # Apply mutations to individual datasets with varying severity
     mutation_severities = [round((j + 1) * 1 / 15, 2) for j in range(15)]
@@ -108,7 +101,7 @@ def main():
                 [data_splits[n]], severity, mutation_name, config
             )
             mutated_data[0].to_csv(
-                f"{config['output_path']}mutated_{int(round(severity * 100, 0))}_{column_name}.csv"
+                f"{config['output_path']}/{dataset_name}_mutated_{int(round(severity * 100, 0))}_{column_name}.csv"
             )
         except Exception as e:
             print(f"Error applying mutation to dataset {n}: {e}")
