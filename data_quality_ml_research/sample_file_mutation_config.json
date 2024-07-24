@@ -1,0 +1,14 @@
+{
+        "data_location": "C:/Users/chris/PycharmProjects/data-quality-ml-research/data/bank-additional-full.csv",
+        "training_percent": 0.35,
+        "num_mutated_sets": 15,
+        "output_path": "C:/Users/chris/PycharmProjects/data-quality-ml-research/mutated_data",
+        "mutator": {"change_to_zero": ["euribor3m"]},
+        "seeds": {"outer_seed": 123, "inner_seed": 456},
+        "noise_arguments": {
+            "distribution": "normal",
+            "low": 0,
+            "high": 100,
+            "scale": 2
+        }
+    }
