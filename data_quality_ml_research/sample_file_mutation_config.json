@@ -1,14 +1,9 @@
 {
-        "data_location": "C:/Users/chris/PycharmProjects/data-quality-ml-research/data/bank-additional-full.csv",
+        "data_location": "C:/Users/chris/PycharmProjects/data-quality-ml-research/data/online_shoppers_intention.csv",
         "training_percent": 0.35,
-        "num_mutated_sets": 15,
+        "num_mutated_sets": 20,
         "output_path": "C:/Users/chris/PycharmProjects/data-quality-ml-research/mutated_data",
-        "mutator": {"change_to_zero": ["euribor3m"]},
+        "mutator": {"change_to_zero": ["BounceRates"]},
         "seeds": {"outer_seed": 123, "inner_seed": 456},
-        "noise_arguments": {
-            "distribution": "normal",
-            "low": 0,
-            "high": 100,
-            "scale": 2
-        }
+       "noise_arguments": {"distribution": "normal", "noise_sd_scale": 4, "low": 0, "high": 100, "scale": 2}
     }

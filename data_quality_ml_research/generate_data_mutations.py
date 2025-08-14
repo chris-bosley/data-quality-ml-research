@@ -61,6 +61,7 @@ def main():
 
     # Define mutation based on config
     mutation_name, column_name = define_mutation(config)
+    num_mutation_steps = config["num_mutated_sets"]
 
     # Read data using data_tools module (adapt based on data format)
     try:
@@ -94,7 +95,9 @@ def main():
     )
 
     # Apply mutations to individual datasets with varying severity
-    mutation_severities = [round((j + 1) * 1 / 15, 2) for j in range(15)]
+    mutation_severities = [
+        round((j + 1) * 1 / num_mutation_steps, 2) for j in range(num_mutation_steps)
+    ]
     for n, severity in enumerate(mutation_severities):
         try:
             mutated_data = data_tools.get_mutations(
