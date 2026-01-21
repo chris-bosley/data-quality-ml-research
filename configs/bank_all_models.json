@@ -1,0 +1,17 @@
+{
+    "data_location": "../data/bank-additional-full.csv",
+    "model": ["RBF SVC", "Random Forest" ,"Neural Network"],
+    "mutator":
+        {
+        "add_categorical_class": ["job"]
+        },
+    "num_mutation_checks": 21,
+    "num_scoring_groups": 13,
+    "seeds": {
+        "outer_seed": 123,
+        "inner_seed": 456
+    },
+    "training_percent": 0.35,
+    "noise_arguments": {"distribution": "normal", "low": 0, "high": 100, "scale":2},
+    "penalty_weights": {"tp": 3, "tn": 0, "fp": -4, "fn": -1.5}
+}
